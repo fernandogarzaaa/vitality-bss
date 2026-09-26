@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.filename }} - {{ app_name }}{% endblock %}
+
+{% block nav %}
+<a href="/" class="flex items-center px-3 py-2 rounded-lg text-stone-600 hover:bg-stone-100">Dashboard</a>
+<a href="/documents" class="flex items-center px-3 py-2 rounded-lg bg-orange-50 text-orange-700 font-medium">Documents</a>
+<a href="/binders" class="flex items-center px-3 py-2 rounded-lg text-stone-600 hover:bg-stone-100">Binders</a>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <a href="/documents" class="text-xs text-orange-600 hover:underline">&larr; Back to documents</a>
+  <h1 class="text-2xl font-bold mt-1 truncate">{{ doc.filename }}</h1>
+  <p class="text-sm text-stone-500"><span class="px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-800">{{ doc.doc_type }}</span> &middot; {{ doc.pages }} page(s) &middot; {{ doc.status }}</p>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-6">
+  <div class="bg-white rounded-xl border border-stone-200 p-5">
+    <h2 class="text-sm font-semibold mb-4">Extracted Information</h2>
+    <dl class="text-sm space-y-2.5">
+      <div class="flex justify-between gap-4"><dt class="text-stone-500">Patient Name</dt><dd class="font-medium text-right">{{ doc.patient_name or "&mdash;" }}</dd></div>
+      <div class="flex justify-between gap-4"><dt class="text-stone-500">Patient ID</dt><dd class="font-medium text-right">{{ doc.patient_id or "&mdash;" }}</dd></div>
+      <div class="flex justify-between gap-4"><dt class="text-stone-500">Claim Number</dt><dd class="font-medium text-right">{{ doc.claim_number or "&mdash;" }}</dd></div>
+      <div class="flex justify-between gap-4"><dt class="text-stone-500">Service Date</dt><dd class="font-medium text-right">{{ doc.service_date or "&mdash;" }}</dd></div>
+      <div class="flex justify-between gap-4"><dt class="text-stone-500">Billed Amount</dt><dd class="font-medium text-right">{% if doc.billed_amount is not none %}${{ "%.2f"|format(doc.billed_amount) }}{% else %}&mdash;{% endif %}</dd></div>
+      <div class="flex justify-between gap-4"><dt class="text-stone-500">Insurer</dt><dd class="font-medium text-right">{{ doc.insurer or "&mdash;" }}</dd></div>
+      <div class="flex justify-between gap-4"><dt class="text-stone-500">SHA-256</dt><dd class="font-mono text-xs text-right break-all">{{ doc.sha256 }}</dd></div>
+    </dl>
+  </div>
+
+  <div class="bg-white rounded-xl border border-stone-200 p-5">
+    <h2 class="text-sm font-semibold mb-4">Edit Fields</h2>
+    <form action="/api/documents/{{ doc.id }}/fields" method="post" class="space-y-3 text-sm">
+      <div>
+        <label class="block text-xs font-medium text-stone-500 mb-1">Patient Name</label>
+        <input name="patient_name" value="{{ doc.patient_name }}" class="w-full px-3 py-2 border border-stone-300 rounded-lg">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-stone-500 mb-1">Patient ID</label>
+        <input name="patient_id" value="{{ doc.patient_id }}" class="w-full px-3 py-2 border border-stone-300 rounded-lg">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-stone-500 mb-1">Claim Number</label>
+        <input name="claim_number" value="{{ doc.claim_number }}" class="w-full px-3 py-2 border border-stone-300 rounded-lg">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-stone-500 mb-1">Service Date</label>
+        <input name="service_date" value="{{ doc.service_date }}" class="w-full px-3 py-2 border border-stone-300 rounded-lg">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-stone-500 mb-1">Billed Amount</label>
+        <input name="billed_amount" value="{% if doc.billed_amount is not none %}{{ doc.billed_amount }}{% endif %}" class="w-full px-3 py-2 border border-stone-300 rounded-lg">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-stone-500 mb-1">Insurer</label>
+        <input name="insurer" value="{{ doc.insurer }}" class="w-full px-3 py-2 border border-stone-300 rounded-lg">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-stone-500 mb-1">Document Type</label>
+        <select name="doc_type" class="w-full px-3 py-2 border border-stone-300 rounded-lg">
+          {% for t in ["EOB", "Clinical Note", "Lab Report", "Invoice", "Insurance Form"] %}
+          <option value="{{ t }}" {% if doc.doc_type == t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700">Save changes</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

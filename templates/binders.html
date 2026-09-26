@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Binders - {{ app_name }}{% endblock %}
+
+{% block nav %}
+<a href="/" class="flex items-center px-3 py-2 rounded-lg text-stone-600 hover:bg-stone-100">Dashboard</a>
+<a href="/documents" class="flex items-center px-3 py-2 rounded-lg text-stone-600 hover:bg-stone-100">Documents</a>
+<a href="/binders" class="flex items-center px-3 py-2 rounded-lg bg-orange-50 text-orange-700 font-medium">Binders</a>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold">Patient Binders</h1>
+  <p class="text-sm text-stone-500">Auto-grouped by patient ID, ordered EOB &rarr; Clinical Note &rarr; Lab Report &rarr; Invoice &rarr; Insurance Form</p>
+</div>
+
+{% if groups %}
+<div class="space-y-6">
+  {% for patient_id, docs in groups.items() %}
+  <div class="bg-white rounded-xl border border-stone-200 p-5">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="font-semibold">{{ docs[0].patient_name or "Unknown patient" }} <span class="text-sm font-normal text-stone-500">{{ patient_id }}</span></h2>
+        <p class="text-xs text-stone-500">{{ docs|length }} document(s)</p>
+      </div>
+      <form action="/api/binders/generate" method="post">
+        <input type="hidden" name="patient_id" value="{{ patient_id }}">
+        <button type="submit" class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700">Generate Binder PDF</button>
+      </form>
+    </div>
+    <ol class="text-sm space-y-1.5">
+      {% for doc in docs %}
+      <li class="flex items-center gap-3">
+        <span class="w-6 h-6 rounded-full bg-stone-100 text-stone-600 text-xs flex items-center justify-center font-medium">{{ loop.index }}</span>
+        <span class="px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-800">{{ doc.doc_type }}</span>
+        <a href="/documents/{{ doc.id }}" class="text-stone-700 hover:underline truncate">{{ doc.filename }}</a>
+        {% if doc.billed_amount is not none %}<span class="ml-auto text-stone-500">${{ "%.2f"|format(doc.billed_amount) }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="bg-white rounded-xl border border-stone-200 p-8 text-center">
+  <p class="text-sm text-stone-500">No binders yet. <a href="/documents" class="text-orange-600 hover:underline">Upload documents</a> to build patient binders automatically.</p>
+</div>
+{% endif %}
+{% endblock %}

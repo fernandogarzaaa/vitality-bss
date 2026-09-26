@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Documents - {{ app_name }}{% endblock %}
+
+{% block nav %}
+<a href="/" class="flex items-center px-3 py-2 rounded-lg text-stone-600 hover:bg-stone-100">Dashboard</a>
+<a href="/documents" class="flex items-center px-3 py-2 rounded-lg bg-orange-50 text-orange-700 font-medium">Documents</a>
+<a href="/binders" class="flex items-center px-3 py-2 rounded-lg text-stone-600 hover:bg-stone-100">Binders</a>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold">Documents</h1>
+  <p class="text-sm text-stone-500">Upload PDFs to classify, extract fields, and deduplicate</p>
+</div>
+
+<div class="bg-white rounded-xl border border-stone-200 p-5 mb-6">
+  <h2 class="text-sm font-semibold mb-3">Upload PDFs</h2>
+  <form action="/api/documents/upload" method="post" enctype="multipart/form-data">
+    <div class="flex items-center gap-3">
+      <input type="file" name="files" accept="application/pdf" multiple required
+             class="text-sm file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border-0 file:bg-orange-600 file:text-white file:text-sm file:font-medium hover:file:bg-orange-700">
+      <button type="submit" class="px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-lg hover:bg-stone-700">Process</button>
+    </div>
+    <p class="mt-2 text-xs text-stone-500">Duplicates are detected by content hash and flagged, never double-counted.</p>
+  </form>
+</div>
+
+<div class="bg-white rounded-xl border border-stone-200 p-5">
+  <h2 class="text-sm font-semibold mb-4">All Documents ({{ documents|length }})</h2>
+  {% if documents %}
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="text-left text-xs text-stone-500 border-b border-stone-200">
+        <th class="pb-2 font-medium">Filename</th>
+        <th class="pb-2 font-medium">Type</th>
+        <th class="pb-2 font-medium">Patient</th>
+        <th class="pb-2 font-medium">Patient ID</th>
+        <th class="pb-2 font-medium">Claim #</th>
+        <th class="pb-2 font-medium">Amount</th>
+        <th class="pb-2 font-medium"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for doc in documents %}
+      <tr class="border-b border-stone-100 hover:bg-stone-50">
+        <td class="py-2.5 pr-3 font-medium truncate max-w-64">{{ doc.filename }}</td>
+        <td class="py-2.5 pr-3"><span class="px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-800">{{ doc.doc_type }}</span></td>
+        <td class="py-2.5 pr-3 text-stone-600">{{ doc.patient_name or "&mdash;" }}</td>
+        <td class="py-2.5 pr-3 text-stone-600">{{ doc.patient_id or "&mdash;" }}</td>
+        <td class="py-2.5 pr-3 text-stone-600">{{ doc.claim_number or "&mdash;" }}</td>
+        <td class="py-2.5 pr-3 text-stone-600">{% if doc.billed_amount is not none %}${{ "%.2f"|format(doc.billed_amount) }}{% else %}&mdash;{% endif %}</td>
+        <td class="py-2.5"><a href="/documents/{{ doc.id }}" class="text-xs text-orange-600 hover:underline">Details</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-sm text-stone-500">No documents yet. Upload PDFs above to get started.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% if doc %}
+<h2 class="text-sm font-semibold mb-3">Document Preview</h2>
+<div class="text-sm font-medium truncate mb-1" title="{{ doc.filename }}">{{ doc.filename }}</div>
+<div class="mb-3"><span class="px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-800">{{ doc.doc_type }}</span></div>
+<h3 class="text-xs font-semibold uppercase tracking-wide text-stone-500 mb-2">Extracted Information</h3>
+<dl class="text-sm space-y-1.5">
+  <div class="flex justify-between gap-2"><dt class="text-stone-500">Patient</dt><dd class="font-medium text-right">{{ doc.patient_name or "&mdash;" }}</dd></div>
+  <div class="flex justify-between gap-2"><dt class="text-stone-500">Patient ID</dt><dd class="font-medium text-right">{{ doc.patient_id or "&mdash;" }}</dd></div>
+  <div class="flex justify-between gap-2"><dt class="text-stone-500">Claim #</dt><dd class="font-medium text-right">{{ doc.claim_number or "&mdash;" }}</dd></div>
+  <div class="flex justify-between gap-2"><dt class="text-stone-500">Service Date</dt><dd class="font-medium text-right">{{ doc.service_date or "&mdash;" }}</dd></div>
+  <div class="flex justify-between gap-2"><dt class="text-stone-500">Billed Amount</dt><dd class="font-medium text-right">{% if doc.billed_amount is not none %}${{ "%.2f"|format(doc.billed_amount) }}{% else %}&mdash;{% endif %}</dd></div>
+  <div class="flex justify-between gap-2"><dt class="text-stone-500">Insurer</dt><dd class="font-medium text-right">{{ doc.insurer or "&mdash;" }}</dd></div>
+  <div class="flex justify-between gap-2"><dt class="text-stone-500">Pages</dt><dd class="font-medium text-right">{{ doc.pages }}</dd></div>
+</dl>
+<a href="/documents/{{ doc.id }}" class="mt-4 inline-block text-xs text-orange-600 hover:underline">Open details &amp; edit fields</a>
+{% else %}
+<h2 class="text-sm font-semibold mb-2">Document Preview</h2>
+<p class="text-sm text-stone-500">Select a document to preview its extracted information.</p>
+{% endif %}

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - {{ app_name }}{% endblock %}
+
+{% block nav %}
+<a href="/" class="flex items-center px-3 py-2 rounded-lg bg-orange-50 text-orange-700 font-medium">Dashboard</a>
+<a href="/documents" class="flex items-center px-3 py-2 rounded-lg text-stone-600 hover:bg-stone-100">Documents</a>
+<a href="/binders" class="flex items-center px-3 py-2 rounded-lg text-stone-600 hover:bg-stone-100">Binders</a>
+{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold">Dashboard</h1>
+    <p class="text-sm text-stone-500">AI-powered healthcare document processing</p>
+  </div>
+  <a href="/documents" class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700">Upload Documents</a>
+</div>
+
+<!-- Stat cards -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <div class="bg-white rounded-xl border border-stone-200 p-5">
+    <div class="text-xs font-medium text-stone-500 uppercase tracking-wide">Total Documents</div>
+    <div class="mt-1 text-3xl font-bold">{{ stats.total_documents }}</div>
+    <div class="mt-1 text-xs text-stone-500">received via upload</div>
+  </div>
+  <div class="bg-white rounded-xl border border-stone-200 p-5">
+    <div class="text-xs font-medium text-stone-500 uppercase tracking-wide">Duplicates Removed</div>
+    <div class="mt-1 text-3xl font-bold">{{ stats.duplicates_removed }}</div>
+    <div class="mt-1 text-xs text-stone-500">flagged by content hash</div>
+  </div>
+  <div class="bg-white rounded-xl border border-stone-200 p-5">
+    <div class="text-xs font-medium text-stone-500 uppercase tracking-wide">Documents Processed</div>
+    <div class="mt-1 text-3xl font-bold">{{ stats.documents_processed }}</div>
+    <div class="mt-1 text-xs text-stone-500">classified + extracted</div>
+  </div>
+  <div class="bg-white rounded-xl border border-stone-200 p-5">
+    <div class="text-xs font-medium text-stone-500 uppercase tracking-wide">Time Saved</div>
+    <div class="mt-1 text-3xl font-bold text-green-600">~{{ stats.time_saved_pct }}%</div>
+    <div class="mt-1 text-xs text-stone-500" title="{{ stats.time_saved_note }}">estimate &middot; &asymp;{{ stats.time_saved_label }} saved</div>
+  </div>
+</div>
+
+<!-- Processing workflow stepper -->
+<div class="bg-white rounded-xl border border-stone-200 p-5 mb-8">
+  <h2 class="text-sm font-semibold mb-4">Processing Workflow</h2>
+  <div class="flex items-center overflow-x-auto">
+    {% for name, count, sub in steps %}
+    <div class="flex items-center shrink-0">
+      <div class="flex flex-col items-center text-center w-36">
+        <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold">{{ loop.index }}</div>
+        <div class="mt-2 text-sm font-medium">{{ name }}</div>
+        <div class="text-xs text-stone-500">{{ count }}</div>
+        <div class="text-[11px] text-stone-400">{{ sub }}</div>
+      </div>
+      {% if not loop.last %}
+      <div class="w-8 h-px bg-stone-300 mx-1 mb-10"></div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="grid lg:grid-cols-3 gap-6">
+  <!-- Recent documents -->
+  <div class="lg:col-span-2 bg-white rounded-xl border border-stone-200 p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-sm font-semibold">Recent Documents</h2>
+      <a href="/documents" class="text-xs text-orange-600 hover:underline">View all</a>
+    </div>
+    {% if recent %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-xs text-stone-500 border-b border-stone-200">
+          <th class="pb-2 font-medium">Filename</th>
+          <th class="pb-2 font-medium">Type</th>
+          <th class="pb-2 font-medium">Patient</th>
+          <th class="pb-2 font-medium">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in recent %}
+        <tr class="border-b border-stone-100 hover:bg-stone-50 cursor-pointer"
+            hx-get="/documents/{{ doc.id }}/preview" hx-target="#preview-panel" hx-swap="innerHTML">
+          <td class="py-2.5 pr-3 font-medium truncate max-w-56">{{ doc.filename }}</td>
+          <td class="py-2.5 pr-3"><span class="px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-800">{{ doc.doc_type }}</span></td>
+          <td class="py-2.5 pr-3 text-stone-600">{{ doc.patient_name or doc.patient_id or "&mdash;" }}</td>
+          <td class="py-2.5 text-stone-600">{% if doc.billed_amount is not none %}${{ "%.2f"|format(doc.billed_amount) }}{% else %}&mdash;{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="text-sm text-stone-500">No documents yet. <a href="/documents" class="text-orange-600 hover:underline">Upload your first PDF</a>.</p>
+    {% endif %}
+  </div>
+
+  <!-- Preview panel -->
+  <div class="bg-white rounded-xl border border-stone-200 p-5" id="preview-panel">
+    {% if preview %}
+    {% with doc=preview %}{% include "partials/preview.html" %}{% endwith %}
+    {% else %}
+    <h2 class="text-sm font-semibold mb-2">Document Preview</h2>
+    <p class="text-sm text-stone-500">Select a document to preview its extracted information.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
