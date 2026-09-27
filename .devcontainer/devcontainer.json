@@ -1,0 +1,18 @@
+{
+  "name": "vitality-bss",
+  "dockerComposeFile": [
+    "../docker-compose.yml"
+  ],
+  "service": "api",
+  "workspaceFolder": "/srv/app",
+  "forwardPorts": [
+    "8001"
+  ],
+  "portsAttributes": {
+    "8001": {
+      "label": "vitality-bss",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "postCreateCommand": "echo 'Codespace ready: the app auto-seeds on first boot.'"
+}
