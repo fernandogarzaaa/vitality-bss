@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+.coverage
+htmlcov/
+
+# Local runtime data
+data/app.db
+*.db-journal
+
+# Local secrets (keep .env.example tracked)
+.env
+.env.*
+!.env.example
