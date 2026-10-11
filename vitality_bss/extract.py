@@ -97,7 +97,7 @@ def normalize_date(raw: str) -> str:
         try:
             return datetime.strptime(raw, fmt).date().isoformat()
         except ValueError:
-            continue
+            pass
     return ""
 
 

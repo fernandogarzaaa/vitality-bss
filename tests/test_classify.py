@@ -74,3 +74,9 @@ def test_full_confidence_single_type():
 def test_tie_breaks_toward_binder_order():
     assert classify("x.pdf", "invoice enrollment").doc_type == "Invoice"
     assert classify("x.pdf", "specimen invoice").doc_type == "Lab Report"
+
+
+def test_confidence_rounded_to_three_places():
+    res = classify("x.pdf", "deductible invoice amount due")
+    assert res.doc_type == "Invoice"
+    assert res.confidence == 0.667

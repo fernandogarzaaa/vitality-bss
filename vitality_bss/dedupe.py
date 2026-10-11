@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import math
 import re
+from collections import Counter
 from collections.abc import Iterable, Sequence
 
 FINGERPRINT_DIM = 512
@@ -22,15 +23,19 @@ def tokens(text: str) -> list[str]:
     return _TOKEN_RE.findall((text or "").lower())
 
 
+def bucket(token: str) -> int:
+    """Stable bucket index for a token (blake2b, independent of PYTHONHASHSEED)."""
+    digest = hashlib.blake2b(token.encode("utf-8"), digest_size=8).digest()
+    return int.from_bytes(digest, "big") % FINGERPRINT_DIM
+
+
 def fingerprint(text: str) -> list[float] | None:
     """L2-normalised hashed term-frequency vector; None when text is too short."""
     toks = tokens(text)
     if len(toks) < MIN_TOKENS:
         return None
-    vec = [0.0] * FINGERPRINT_DIM
-    for tok in toks:
-        digest = hashlib.blake2b(tok.encode("utf-8"), digest_size=8).digest()
-        vec[int.from_bytes(digest, "big") % FINGERPRINT_DIM] += 1.0
+    counts = Counter(bucket(tok) for tok in toks)
+    vec = [float(counts.get(i, 0)) for i in range(FINGERPRINT_DIM)]
     norm = math.sqrt(sum(v * v for v in vec))
     return [round(v / norm, 6) for v in vec]
 
@@ -38,7 +43,7 @@ def fingerprint(text: str) -> list[float] | None:
 def cosine(a: Sequence[float], b: Sequence[float]) -> float:
     if len(a) != len(b) or not a:
         return 0.0
-    dot = sum(x * y for x, y in zip(a, b, strict=True))
+    dot = sum(a[i] * b[i] for i in range(len(a)))
     na = math.sqrt(sum(x * x for x in a))
     nb = math.sqrt(sum(y * y for y in b))
     if na == 0 or nb == 0:

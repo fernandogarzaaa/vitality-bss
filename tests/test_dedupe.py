@@ -65,3 +65,28 @@ def test_best_match():
     assert best_match(a, [(7, [1.0, 0.0])], 1.0) == (7, 1.0)
     assert best_match(a, [], 0.5) is None
     assert best_match(a, [(8, [])], 0.5) is None
+
+
+def test_bucket_is_stable_golden():
+    from vitality_bss.dedupe import bucket
+
+    assert [bucket(t) for t in ["alpha", "pt", "1001"]] == [154, 417, 13]
+
+
+def test_fingerprint_golden_values():
+    fp = fingerprint("alpha alpha beta gamma delta epsilon zeta eta")
+    assert fp is not None
+    nonzero = [(i, v) for i, v in enumerate(fp) if v]
+    assert nonzero == [
+        (14, 0.316228),
+        (154, 0.632456),
+        (173, 0.316228),
+        (174, 0.316228),
+        (197, 0.316228),
+        (230, 0.316228),
+        (245, 0.316228),
+    ]
+
+
+def test_best_match_tie_keeps_first():
+    assert best_match([1.0, 0.0], [(5, [1.0, 0.0]), (6, [1.0, 0.0])], 0.5) == (5, 1.0)

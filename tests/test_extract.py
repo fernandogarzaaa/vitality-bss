@@ -170,6 +170,6 @@ def test_missing_fields_by_type():
 
 
 def test_is_valid_iso_date():
-    assert is_valid_iso_date("2026-02-28")
-    assert not is_valid_iso_date("2026-02-30")
-    assert not is_valid_iso_date("02/02/2026")
+    assert is_valid_iso_date("2026-02-28") is True
+    assert is_valid_iso_date("2026-02-30") is False
+    assert is_valid_iso_date("02/02/2026") is False
