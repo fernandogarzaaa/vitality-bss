@@ -314,6 +314,7 @@ def do_delete(db: Session, request: Request, admin: User, doc_id: int) -> None:
     for other in db.scalars(select(Document).where(Document.near_duplicate_of_id == doc.id)):
         other.near_duplicate_of_id = None
         other.near_duplicate_score = None
+    db.flush()
     db.delete(doc)
     db.commit()
     get_store().delete(key)
