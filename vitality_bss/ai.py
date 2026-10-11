@@ -53,6 +53,7 @@ class LLMClient(Protocol):
 
 
 _FENCE_RE = re.compile(r"^```(?:json)?\s*|\s*```$", re.I)
+_OBJECT_RE = re.compile(r"\{.*\}", re.S)
 
 
 def parse_json_object(content: str) -> dict[str, Any]:
@@ -61,11 +62,11 @@ def parse_json_object(content: str) -> dict[str, Any]:
     try:
         value = json.loads(stripped)
     except json.JSONDecodeError:
-        start, end = stripped.find("{"), stripped.rfind("}")
-        if start == -1 or end <= start:
+        match = _OBJECT_RE.search(stripped)
+        if match is None:
             raise LLMError("model response was not JSON") from None
         try:
-            value = json.loads(stripped[start : end + 1])
+            value = json.loads(match.group(0))
         except json.JSONDecodeError as exc:
             raise LLMError("model response was not JSON") from exc
     if not isinstance(value, dict):

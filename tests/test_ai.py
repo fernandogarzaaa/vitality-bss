@@ -280,3 +280,56 @@ def test_get_client_modes(set_env):
     assert c.max_retries == 3
     assert c.base_url == "http://localhost:11434/v1"
     set_env(AI_MODE="off")
+
+
+def test_client_retries_on_500_exactly():
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        return httpx.Response(500) if calls["n"] == 1 else _reply('{"x": 1}')
+
+    assert _client(handler, retries=1).complete_json("s", "u") == {"x": 1}
+    assert calls["n"] == 2
+
+
+def test_client_499_is_not_retried():
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        return httpx.Response(499)
+
+    with pytest.raises(ai.LLMError, match="499"):
+        _client(handler, retries=3).complete_json("s", "u")
+    assert calls["n"] == 1
+
+
+def test_client_backoff_schedule(monkeypatch):
+    sleeps: list[float] = []
+    monkeypatch.setattr(ai.time, "sleep", sleeps.append)
+    client = ai.OpenAICompatibleClient(
+        "http://x/v1", "", "m", max_retries=2, transport=httpx.MockTransport(lambda r: httpx.Response(503))
+    )
+    with pytest.raises(ai.LLMError, match="after 3 attempts"):
+        client.complete_json("s", "u")
+    assert sleeps == [0.5, 1.0]
+
+
+def test_client_default_settings():
+    c = ai.OpenAICompatibleClient("http://x/v1/", "", "m")
+    assert c.max_retries == 2
+    assert c.backoff_seconds == 0.5
+    assert c.base_url == "http://x/v1"
+    assert c._client.timeout.read == 30.0
+
+
+def test_enrich_threshold_boundary_not_overridden():
+    rules = Classification("Invoice", 0.6, {})
+    out = ai.enrich(FakeLLM({"doc_type": "EOB"}), "x.pdf", "t", rules, _empty_fields())
+    assert out.doc_type == "Invoice"
+    assert out.classifier == "rules"
+
+
+def test_parse_json_embedded_multiline():
+    assert ai.parse_json_object('Result:\n{"a":\n 1}\nDone') == {"a": 1}

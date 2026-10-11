@@ -25,12 +25,30 @@ os.environ.update(
     }
 )
 
-import pytest  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
+from typing import TYPE_CHECKING, Any  # noqa: E402
 
-from vitality_bss import db as dbmod  # noqa: E402
+import pytest  # noqa: E402
+
 from vitality_bss.config import reset_settings_cache  # noqa: E402
-from vitality_bss.demo import make_pdf  # noqa: E402
+
+if TYPE_CHECKING:
+    from fastapi.testclient import TestClient
+
+# Heavy imports (FastAPI, SQLAlchemy, reportlab) are deferred so pure unit-test
+# modules start fast; this matters for mutation testing, which reruns them often.
+
+
+def _db() -> Any:
+    from vitality_bss import db as dbmod
+
+    return dbmod
+
+
+def make_pdf(title: str, lines: list[str], *, banner: bool = True) -> bytes:
+    from vitality_bss.demo import make_pdf as _make
+
+    return _make(title, lines, banner=banner)
+
 
 ADMIN = ("admin@example.test", "Adm1n-Passw0rd!")
 PASSWORD = "Str0ng-Passw0rd!"
@@ -42,9 +60,9 @@ def env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'app.db'}")
     monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
     reset_settings_cache()
-    dbmod.reset_engine()
+    _db().reset_engine()
     yield tmp_path
-    dbmod.reset_engine()
+    _db().reset_engine()
     reset_settings_cache()
 
 
@@ -62,13 +80,13 @@ def set_env(monkeypatch: pytest.MonkeyPatch) -> Callable[..., None]:
 
 @pytest.fixture
 def migrated(env: Path) -> Path:
-    dbmod.run_migrations()
+    _db().run_migrations()
     return env
 
 
 @pytest.fixture
 def session(migrated: Path):  # type: ignore[no-untyped-def]
-    s = dbmod.new_session()
+    s = _db().new_session()
     try:
         yield s
     finally:
@@ -77,6 +95,8 @@ def session(migrated: Path):  # type: ignore[no-untyped-def]
 
 @pytest.fixture
 def client(env: Path) -> Iterator[TestClient]:
+    from fastapi.testclient import TestClient
+
     from vitality_bss.web.app import create_app
 
     with TestClient(create_app()) as c:
