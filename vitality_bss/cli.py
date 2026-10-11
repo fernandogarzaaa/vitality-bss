@@ -59,8 +59,14 @@ def _cmd_create_user(args: argparse.Namespace) -> int:
         except services.UserError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 1
-        audit.record(db, "user.create", actor_email="cli", resource_type="user", resource_id=user.id,
-                     details={"role": user.role, "source": "cli"})
+        audit.record(
+            db,
+            "user.create",
+            actor_email="cli",
+            resource_type="user",
+            resource_id=user.id,
+            details={"role": user.role, "source": "cli"},
+        )
         print(f"created {user.role} user id={user.id}")
     return 0
 

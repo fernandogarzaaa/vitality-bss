@@ -63,9 +63,7 @@ def upgrade() -> None:
         sa.Column("near_duplicate_score", sa.Float(), nullable=True),
         sa.Column("storage_key", sa.String(128), nullable=False, server_default=""),
         sa.Column("encrypted", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column(
-            "uploaded_by_id", sa.Integer(), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True
-        ),
+        sa.Column("uploaded_by_id", sa.Integer(), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
     )
@@ -79,12 +77,8 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("filename", sa.String(512), nullable=False),
         sa.Column("sha256", sa.String(64), nullable=False),
-        sa.Column(
-            "document_id", sa.Integer(), sa.ForeignKey("documents.id", ondelete="CASCADE"), nullable=True
-        ),
-        sa.Column(
-            "uploaded_by_id", sa.Integer(), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True
-        ),
+        sa.Column("document_id", sa.Integer(), sa.ForeignKey("documents.id", ondelete="CASCADE"), nullable=True),
+        sa.Column("uploaded_by_id", sa.Integer(), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
     )
     op.create_index("ix_duplicate_uploads_sha256", "duplicate_uploads", ["sha256"])

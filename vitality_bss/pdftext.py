@@ -66,13 +66,28 @@ def ocr_page(data: bytes, page_number: int, *, lang: str, dpi: int, timeout: int
         pdf_path.write_bytes(data)
         prefix = tmpdir / "page"
         subprocess.run(
-            ["pdftoppm", "-r", str(dpi), "-f", str(page_number), "-l", str(page_number),
-             "-png", "-singlefile", str(pdf_path), str(prefix)],
-            check=True, capture_output=True, timeout=timeout,
+            [
+                "pdftoppm",
+                "-r",
+                str(dpi),
+                "-f",
+                str(page_number),
+                "-l",
+                str(page_number),
+                "-png",
+                "-singlefile",
+                str(pdf_path),
+                str(prefix),
+            ],
+            check=True,
+            capture_output=True,
+            timeout=timeout,
         )
         result = subprocess.run(
             ["tesseract", str(prefix) + ".png", "stdout", "-l", lang],
-            check=True, capture_output=True, timeout=timeout,
+            check=True,
+            capture_output=True,
+            timeout=timeout,
         )
         return result.stdout.decode("utf-8", errors="replace")
 

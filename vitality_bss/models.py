@@ -63,9 +63,7 @@ class Document(Base):
     near_duplicate_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     storage_key: Mapped[str] = mapped_column(String(128), default="")
     encrypted: Mapped[bool] = mapped_column(Boolean, default=False)
-    uploaded_by_id: Mapped[int | None] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
-    )
+    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
@@ -78,12 +76,8 @@ class DuplicateUpload(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     filename: Mapped[str] = mapped_column(String(512))
     sha256: Mapped[str] = mapped_column(String(64), index=True)
-    document_id: Mapped[int | None] = mapped_column(
-        ForeignKey("documents.id", ondelete="CASCADE"), nullable=True
-    )
-    uploaded_by_id: Mapped[int | None] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
-    )
+    document_id: Mapped[int | None] = mapped_column(ForeignKey("documents.id", ondelete="CASCADE"), nullable=True)
+    uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

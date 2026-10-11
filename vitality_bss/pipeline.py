@@ -48,9 +48,14 @@ class Analysis:
     def summary(self) -> dict[str, object]:
         """JSON-friendly view without the raw text."""
         return {
-            "pages": self.pages, "ocr_pages": self.ocr_pages, "doc_type": self.doc_type,
-            "confidence": self.confidence, "classifier": self.classifier, "fields": dict(self.fields),
-            "review_reasons": self.review_reasons, "text_chars": self.text_chars,
+            "pages": self.pages,
+            "ocr_pages": self.ocr_pages,
+            "doc_type": self.doc_type,
+            "confidence": self.confidence,
+            "classifier": self.classifier,
+            "fields": dict(self.fields),
+            "review_reasons": self.review_reasons,
+            "text_chars": self.text_chars,
         }
 
 
@@ -98,22 +103,31 @@ def analyze(filename: str, data: bytes, settings: Settings | None = None) -> Ana
             extra.append("ai_unavailable")
         else:
             doc_type, confidence, classifier, fields = (
-                result.doc_type, result.confidence, result.classifier, result.fields,
+                result.doc_type,
+                result.confidence,
+                result.classifier,
+                result.fields,
             )
     text_chars = len(pdf.text.strip())
     if text_chars == 0 and not pdf.ocr_available:
         extra.append("ocr_unavailable")
     return Analysis(
-        text=pdf.text, pages=pdf.pages, ocr_pages=pdf.ocr_pages, doc_type=doc_type, confidence=confidence,
-        classifier=classifier, fields=fields,
+        text=pdf.text,
+        pages=pdf.pages,
+        ocr_pages=pdf.ocr_pages,
+        doc_type=doc_type,
+        confidence=confidence,
+        classifier=classifier,
+        fields=fields,
         review_reasons=review_reasons(fields, doc_type, confidence, text_chars) + extra,
         text_chars=text_chars,
     )
 
 
 def _record_duplicate(db: Session, existing: Document, filename: str, sha: str, user: User | None) -> UploadResult:
-    dup = DuplicateUpload(filename=filename, sha256=sha, document_id=existing.id,
-                          uploaded_by_id=user.id if user else None)
+    dup = DuplicateUpload(
+        filename=filename, sha256=sha, document_id=existing.id, uploaded_by_id=user.id if user else None
+    )
     db.add(dup)
     db.commit()
     log.info("exact duplicate upload", extra={"document_id": existing.id})
@@ -199,14 +213,20 @@ def process_upload(
     db.refresh(doc)
     log.info(
         "document processed",
-        extra={"document_id": doc.id, "doc_type": doc.doc_type, "status": doc.status,
-               "pages": doc.pages, "ocr_pages": doc.ocr_pages},
+        extra={
+            "document_id": doc.id,
+            "doc_type": doc.doc_type,
+            "status": doc.status,
+            "pages": doc.pages,
+            "ocr_pages": doc.ocr_pages,
+        },
     )
     return UploadResult(document=doc, duplicate=False)
 
 
-def reprocess(db: Session, doc: Document, *, store: BlobStore | None = None,
-              settings: Settings | None = None) -> Document:
+def reprocess(
+    db: Session, doc: Document, *, store: BlobStore | None = None, settings: Settings | None = None
+) -> Document:
     """Re-run classification/extraction on a stored document (e.g. after enabling OCR/LLM)."""
     s = settings or get_settings()
     data = (store or get_store()).get(doc.storage_key, doc.encrypted)

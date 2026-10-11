@@ -12,7 +12,7 @@ from vitality_bss.classify import (
 
 def test_doc_types_and_order():
     assert DOC_TYPES == ("EOB", "Clinical Note", "Lab Report", "Invoice", "Insurance Form")
-    assert ALL_TYPES == (*DOC_TYPES, UNCLASSIFIED)
+    assert (*DOC_TYPES, UNCLASSIFIED) == ALL_TYPES
     assert sorted(ALL_TYPES, key=BINDER_ORDER.__getitem__) == list(ALL_TYPES)
     assert BINDER_ORDER["EOB"] == 0
     assert BINDER_ORDER[UNCLASSIFIED] == 5

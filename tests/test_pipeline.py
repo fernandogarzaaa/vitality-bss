@@ -25,14 +25,24 @@ def test_safe_filename():
 
 
 def test_review_reasons():
-    full = {"patient_name": "A B", "patient_id": "PT-1", "claim_number": "", "service_date": "2026-01-01",
-            "billed_amount": 5.0, "insurer": ""}
+    full = {
+        "patient_name": "A B",
+        "patient_id": "PT-1",
+        "claim_number": "",
+        "service_date": "2026-01-01",
+        "billed_amount": 5.0,
+        "insurer": "",
+    }
     assert pipeline.review_reasons(full, "EOB", 0.9, 100) == []  # type: ignore[arg-type]
     assert pipeline.review_reasons(full, "EOB", 0.49, 100) == ["low_confidence"]  # type: ignore[arg-type]
     assert pipeline.review_reasons(full, "EOB", 0.5, 100) == []  # type: ignore[arg-type]
     empty = dict.fromkeys(full, "") | {"billed_amount": None}
     assert pipeline.review_reasons(empty, "Unclassified", 0.0, 0) == [  # type: ignore[arg-type]
-        "no_text", "unclassified", "missing_patient_id", "missing_patient_name"]
+        "no_text",
+        "unclassified",
+        "missing_patient_id",
+        "missing_patient_name",
+    ]
 
 
 def test_process_classifies_extracts_persists(session):
@@ -41,7 +51,11 @@ def test_process_classifies_extracts_persists(session):
     doc = res.document
     assert (doc.doc_type, doc.patient_id, doc.patient_name) == ("EOB", "PT-7777", "Test Person")
     assert (doc.claim_number, doc.service_date, doc.billed_amount, doc.insurer) == (
-        "CLM-2026-0777", "2026-09-05", 500.0, "Humana")
+        "CLM-2026-0777",
+        "2026-09-05",
+        500.0,
+        "Humana",
+    )
     assert doc.status == "processed"
     assert doc.review_reasons == []
     assert doc.pages == 1
@@ -154,8 +168,9 @@ def test_ai_not_called_without_text(session, monkeypatch, set_env):
             raise AssertionError("should not be called")
 
     monkeypatch.setattr(ai, "get_client", lambda: Explode())
-    from pypdf import PdfWriter
     import io
+
+    from pypdf import PdfWriter
 
     w = PdfWriter()
     w.add_blank_page(612, 792)

@@ -41,35 +41,91 @@ def make_pdf(title: str, lines: list[str], *, banner: bool = True) -> bytes:
 
 
 SAMPLES: list[tuple[str, list[str], list[str]]] = [
-    ("EXPLANATION OF BENEFITS", ["eob_PT-1001.pdf"], [
-        "Insurer: BlueCross BlueShield", "Patient Name: John Carter", "Patient ID: PT-1001",
-        "Claim Number: CLM-2026-0042", "Service Date: 08/12/2026", "Provider: Riverside Medical Center",
-        "Billed Amount: $1,250.00", "Allowed Amount: $980.00", "Patient Responsibility: $196.00",
-        "This is not a bill. This statement explains how your claim was processed."]),
-    ("CLINICAL NOTE - Outpatient Visit", ["clinical-note_PT-1001.pdf"], [
-        "Patient Name: John Carter", "Patient ID: PT-1001", "Date of Visit: 08/12/2026",
-        "Chief Complaint: Persistent lower back pain",
-        "History of Present Illness: Patient reports dull lumbar pain for three weeks.",
-        "Vital Signs: BP 128/82, HR 74, Temp 98.6F",
-        "Physical Exam: Lumbar paraspinal tenderness, full range of motion.",
-        "Assessment and Plan: Lumbar strain. Physical therapy. Follow-up visit in two weeks."]),
-    ("LABORATORY TEST REPORT", ["lab-report_PT-1001.pdf"], [
-        "Patient Name: John Carter", "Patient ID: PT-1001", "Specimen Collected: 08/13/2026",
-        "Test Results:", "Hemoglobin A1C: 5.6% (Reference Range: 4.0-5.6%)",
-        "Fasting Glucose: 98 mg/dL (Reference Range: 70-99 mg/dL)",
-        "Total Cholesterol: 182 mg/dL (Reference Range: <200 mg/dL)"]),
-    ("PATIENT BILLING STATEMENT - INVOICE", ["invoice_PT-1001.pdf", "invoice_PT-1001_copy.pdf"], [
-        "Patient Name: John Carter", "Patient ID: PT-1001", "Claim Number: CLM-2026-0042",
-        "Service Date: 08/12/2026", "Billed Amount: $245.00", "Amount Due: $245.00",
-        "Payment Due: 09/30/2026", "Please remit payment to Riverside Medical Center, Billing Dept."]),
-    ("EXPLANATION OF BENEFITS", ["eob_PT-2002.pdf"], [
-        "Insurer: Aetna", "Patient Name: Maria Santos", "Patient ID: PT-2002", "Claim Number: CLM-2026-0077",
-        "Service Date: 08/20/2026", "Billed Amount: $2,340.00", "Allowed Amount: $1,870.00",
-        "Patient Responsibility: $468.00", "This is not a bill."]),
-    ("HEALTH INSURANCE ENROLLMENT FORM", ["insurance-form_PT-2002.pdf"], [
-        "Subscriber Name: Maria Santos", "Patient ID: PT-2002", "Insurer: Aetna", "Policy Number: AET-884210",
-        "Group Number: G-55201", "Coverage Start Date: 01/01/2026",
-        "Coverage includes medical, dental, and vision benefits."]),
+    (
+        "EXPLANATION OF BENEFITS",
+        ["eob_PT-1001.pdf"],
+        [
+            "Insurer: BlueCross BlueShield",
+            "Patient Name: John Carter",
+            "Patient ID: PT-1001",
+            "Claim Number: CLM-2026-0042",
+            "Service Date: 08/12/2026",
+            "Provider: Riverside Medical Center",
+            "Billed Amount: $1,250.00",
+            "Allowed Amount: $980.00",
+            "Patient Responsibility: $196.00",
+            "This is not a bill. This statement explains how your claim was processed.",
+        ],
+    ),
+    (
+        "CLINICAL NOTE - Outpatient Visit",
+        ["clinical-note_PT-1001.pdf"],
+        [
+            "Patient Name: John Carter",
+            "Patient ID: PT-1001",
+            "Date of Visit: 08/12/2026",
+            "Chief Complaint: Persistent lower back pain",
+            "History of Present Illness: Patient reports dull lumbar pain for three weeks.",
+            "Vital Signs: BP 128/82, HR 74, Temp 98.6F",
+            "Physical Exam: Lumbar paraspinal tenderness, full range of motion.",
+            "Assessment and Plan: Lumbar strain. Physical therapy. Follow-up visit in two weeks.",
+        ],
+    ),
+    (
+        "LABORATORY TEST REPORT",
+        ["lab-report_PT-1001.pdf"],
+        [
+            "Patient Name: John Carter",
+            "Patient ID: PT-1001",
+            "Specimen Collected: 08/13/2026",
+            "Test Results:",
+            "Hemoglobin A1C: 5.6% (Reference Range: 4.0-5.6%)",
+            "Fasting Glucose: 98 mg/dL (Reference Range: 70-99 mg/dL)",
+            "Total Cholesterol: 182 mg/dL (Reference Range: <200 mg/dL)",
+        ],
+    ),
+    (
+        "PATIENT BILLING STATEMENT - INVOICE",
+        ["invoice_PT-1001.pdf", "invoice_PT-1001_copy.pdf"],
+        [
+            "Patient Name: John Carter",
+            "Patient ID: PT-1001",
+            "Claim Number: CLM-2026-0042",
+            "Service Date: 08/12/2026",
+            "Billed Amount: $245.00",
+            "Amount Due: $245.00",
+            "Payment Due: 09/30/2026",
+            "Please remit payment to Riverside Medical Center, Billing Dept.",
+        ],
+    ),
+    (
+        "EXPLANATION OF BENEFITS",
+        ["eob_PT-2002.pdf"],
+        [
+            "Insurer: Aetna",
+            "Patient Name: Maria Santos",
+            "Patient ID: PT-2002",
+            "Claim Number: CLM-2026-0077",
+            "Service Date: 08/20/2026",
+            "Billed Amount: $2,340.00",
+            "Allowed Amount: $1,870.00",
+            "Patient Responsibility: $468.00",
+            "This is not a bill.",
+        ],
+    ),
+    (
+        "HEALTH INSURANCE ENROLLMENT FORM",
+        ["insurance-form_PT-2002.pdf"],
+        [
+            "Subscriber Name: Maria Santos",
+            "Patient ID: PT-2002",
+            "Insurer: Aetna",
+            "Policy Number: AET-884210",
+            "Group Number: G-55201",
+            "Coverage Start Date: 01/01/2026",
+            "Coverage includes medical, dental, and vision benefits.",
+        ],
+    ),
 ]
 
 

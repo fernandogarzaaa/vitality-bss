@@ -11,15 +11,26 @@ from vitality_bss.storage import get_store
 
 
 def _doc(i, doc_type, pid="PT-1", name="", date="", amount=None, status="processed"):  # type: ignore[no-untyped-def]
-    return Document(id=i, doc_type=doc_type, patient_id=pid, patient_name=name, service_date=date,
-                    billed_amount=amount, status=status, filename=f"{i}.pdf")
+    return Document(
+        id=i,
+        doc_type=doc_type,
+        patient_id=pid,
+        patient_name=name,
+        service_date=date,
+        billed_amount=amount,
+        status=status,
+        filename=f"{i}.pdf",
+    )
 
 
 def test_group_and_order():
     docs = [
-        _doc(1, "Invoice", amount=10.0), _doc(2, "EOB", name="Ana Cruz", amount=99.0),
-        _doc(3, "Lab Report", pid=""), _doc(4, "Invoice", pid="PT-0", amount=5.0),
-        _doc(5, "Clinical Note"), _doc(6, "Invoice", date="2026-01-01", amount=1.5),
+        _doc(1, "Invoice", amount=10.0),
+        _doc(2, "EOB", name="Ana Cruz", amount=99.0),
+        _doc(3, "Lab Report", pid=""),
+        _doc(4, "Invoice", pid="PT-0", amount=5.0),
+        _doc(5, "Clinical Note"),
+        _doc(6, "Invoice", date="2026-01-01", amount=1.5),
     ]
     out = binders.group_documents(docs)
     assert list(out) == ["PT-0", "PT-1", binders.UNASSIGNED]

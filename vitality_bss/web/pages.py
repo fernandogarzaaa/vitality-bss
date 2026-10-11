@@ -65,8 +65,12 @@ def login_page(request: Request) -> HTMLResponse:
 
 
 @router.post("/login")
-def login_form(request: Request, email: str = Form(..., max_length=255), password: str = Form(..., max_length=1024),
-               db: Session = Depends(get_db)) -> Response:
+def login_form(
+    request: Request,
+    email: str = Form(..., max_length=255),
+    password: str = Form(..., max_length=1024),
+    db: Session = Depends(get_db),
+) -> Response:
     user, error = api.do_login(db, request, email, password)
     if user is None:
         return render(request, "login.html", None, status_code=401, error=error)
@@ -76,8 +80,9 @@ def login_form(request: Request, email: str = Form(..., max_length=255), passwor
 
 
 @router.post("/logout")
-def logout_form(request: Request, csrf_token: str = Form(""), auth: Auth = Depends(page_auth),
-                db: Session = Depends(get_db)) -> Response:
+def logout_form(
+    request: Request, csrf_token: str = Form(""), auth: Auth = Depends(page_auth), db: Session = Depends(get_db)
+) -> Response:
     check_form_csrf(auth, csrf_token)
     api.revoke_sessions(db, request, auth.user.id)
     resp = redirect("/login")
@@ -91,9 +96,14 @@ def account_page(request: Request, auth: Auth = Depends(page_auth)) -> HTMLRespo
 
 
 @router.post("/account/password")
-def account_password(request: Request, current_password: str = Form(..., max_length=1024),
-                     new_password: str = Form(..., max_length=1024), csrf_token: str = Form(""),
-                     auth: Auth = Depends(page_auth), db: Session = Depends(get_db)) -> Response:
+def account_password(
+    request: Request,
+    current_password: str = Form(..., max_length=1024),
+    new_password: str = Form(..., max_length=1024),
+    csrf_token: str = Form(""),
+    auth: Auth = Depends(page_auth),
+    db: Session = Depends(get_db),
+) -> Response:
     check_form_csrf(auth, csrf_token)
     user = db.get(User, auth.user.id)
     assert user is not None
@@ -134,35 +144,63 @@ def dashboard(request: Request, auth: Auth = Depends(page_auth), db: Session = D
 def documents_page(request: Request, auth: Auth = Depends(page_auth), db: Session = Depends(get_db)) -> HTMLResponse:
     status_filter = request.query_params.get("status", "")
     docs = _recent_docs(db, status_filter)
-    audit.record(db, "document.list", actor=auth.user, resource_type="document", ip=client_ip(request),
-                 details={"count": len(docs)})
-    return render(request, "documents.html", auth, documents=docs, status_filter=status_filter,
-                  max_mb=get_settings().MAX_UPLOAD_MB, results=None)
+    audit.record(
+        db,
+        "document.list",
+        actor=auth.user,
+        resource_type="document",
+        ip=client_ip(request),
+        details={"count": len(docs)},
+    )
+    return render(
+        request,
+        "documents.html",
+        auth,
+        documents=docs,
+        status_filter=status_filter,
+        max_mb=get_settings().MAX_UPLOAD_MB,
+        results=None,
+    )
 
 
 @router.post("/documents/upload", response_class=HTMLResponse)
-async def documents_upload(request: Request, files: list[UploadFile] = File(...), csrf_token: str = Form(""),
-                           auth: Auth = Depends(page_auth), db: Session = Depends(get_db)) -> HTMLResponse:
+async def documents_upload(
+    request: Request,
+    files: list[UploadFile] = File(...),
+    csrf_token: str = Form(""),
+    auth: Auth = Depends(page_auth),
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
     check_form_csrf(auth, csrf_token)
     page_role(auth, *api.WRITERS)
     results = await api.handle_uploads(files, request, db, auth.user)
-    return render(request, "documents.html", auth, documents=_recent_docs(db), status_filter="",
-                  max_mb=get_settings().MAX_UPLOAD_MB, results=results)
+    return render(
+        request,
+        "documents.html",
+        auth,
+        documents=_recent_docs(db),
+        status_filter="",
+        max_mb=get_settings().MAX_UPLOAD_MB,
+        results=results,
+    )
 
 
 @router.get("/documents/{doc_id}", response_class=HTMLResponse)
-def document_detail(doc_id: int, request: Request, auth: Auth = Depends(page_auth),
-                    db: Session = Depends(get_db)) -> HTMLResponse:
+def document_detail(
+    doc_id: int, request: Request, auth: Auth = Depends(page_auth), db: Session = Depends(get_db)
+) -> HTMLResponse:
     doc = api.get_doc_or_404(db, doc_id)
-    audit.record(db, "document.view", actor=auth.user, resource_type="document", resource_id=doc.id,
-                 ip=client_ip(request))
+    audit.record(
+        db, "document.view", actor=auth.user, resource_type="document", resource_id=doc.id, ip=client_ip(request)
+    )
     original = db.get(Document, doc.near_duplicate_of_id) if doc.near_duplicate_of_id else None
     return render(request, "document_detail.html", auth, doc=doc, original=original, error="")
 
 
 @router.post("/documents/{doc_id}/edit")
-async def document_edit(doc_id: int, request: Request, auth: Auth = Depends(page_auth),
-                        db: Session = Depends(get_db)) -> Response:
+async def document_edit(
+    doc_id: int, request: Request, auth: Auth = Depends(page_auth), db: Session = Depends(get_db)
+) -> Response:
     form = await request.form()
     check_form_csrf(auth, str(form.get("csrf_token", "")))
     page_role(auth, *api.WRITERS)
@@ -181,20 +219,33 @@ async def document_edit(doc_id: int, request: Request, auth: Auth = Depends(page
         return render(request, "document_detail.html", auth, status_code=422, doc=doc, original=None, error=msg)
     changed = services.apply_document_update(doc, update)
     db.commit()
-    audit.record(db, "document.update", actor=auth.user, resource_type="document", resource_id=doc.id,
-                 ip=client_ip(request), details={"fields": changed})
+    audit.record(
+        db,
+        "document.update",
+        actor=auth.user,
+        resource_type="document",
+        resource_id=doc.id,
+        ip=client_ip(request),
+        details={"fields": changed},
+    )
     return redirect(f"/documents/{doc.id}?msg=Saved")
 
 
 @router.get("/documents/{doc_id}/file")
-def document_file(doc_id: int, request: Request, auth: Auth = Depends(page_auth),
-                  db: Session = Depends(get_db)) -> Response:
+def document_file(
+    doc_id: int, request: Request, auth: Auth = Depends(page_auth), db: Session = Depends(get_db)
+) -> Response:
     return api.document_file_response(db, request, auth.user, doc_id)
 
 
 @router.post("/documents/{doc_id}/delete")
-def document_delete(doc_id: int, request: Request, csrf_token: str = Form(""), auth: Auth = Depends(page_auth),
-                    db: Session = Depends(get_db)) -> Response:
+def document_delete(
+    doc_id: int,
+    request: Request,
+    csrf_token: str = Form(""),
+    auth: Auth = Depends(page_auth),
+    db: Session = Depends(get_db),
+) -> Response:
     check_form_csrf(auth, csrf_token)
     page_role(auth, "admin")
     api.do_delete(db, request, auth.user, doc_id)
@@ -202,8 +253,13 @@ def document_delete(doc_id: int, request: Request, csrf_token: str = Form(""), a
 
 
 @router.post("/documents/{doc_id}/reprocess")
-def document_reprocess(doc_id: int, request: Request, csrf_token: str = Form(""), auth: Auth = Depends(page_auth),
-                       db: Session = Depends(get_db)) -> Response:
+def document_reprocess(
+    doc_id: int,
+    request: Request,
+    csrf_token: str = Form(""),
+    auth: Auth = Depends(page_auth),
+    db: Session = Depends(get_db),
+) -> Response:
     check_form_csrf(auth, csrf_token)
     page_role(auth, *api.WRITERS)
     api.do_reprocess(db, request, auth.user, doc_id)
@@ -216,14 +272,25 @@ def document_reprocess(doc_id: int, request: Request, csrf_token: str = Form("")
 @router.get("/binders", response_class=HTMLResponse)
 def binders_page(request: Request, auth: Auth = Depends(page_auth), db: Session = Depends(get_db)) -> HTMLResponse:
     binders = load_binders(db)
-    audit.record(db, "binder.list", actor=auth.user, resource_type="binder", ip=client_ip(request),
-                 details={"count": len(binders)})
+    audit.record(
+        db,
+        "binder.list",
+        actor=auth.user,
+        resource_type="binder",
+        ip=client_ip(request),
+        details={"count": len(binders)},
+    )
     return render(request, "binders.html", auth, binders=list(binders.values()))
 
 
 @router.post("/binders/generate")
-def binders_generate(request: Request, patient_id: str = Form(..., max_length=64), csrf_token: str = Form(""),
-                     auth: Auth = Depends(page_auth), db: Session = Depends(get_db)) -> Response:
+def binders_generate(
+    request: Request,
+    patient_id: str = Form(..., max_length=64),
+    csrf_token: str = Form(""),
+    auth: Auth = Depends(page_auth),
+    db: Session = Depends(get_db),
+) -> Response:
     check_form_csrf(auth, csrf_token)
     return api.binder_pdf_response(db, request, auth.user, patient_id)
 
@@ -243,25 +310,44 @@ def users_page(request: Request, auth: Auth = Depends(page_auth), db: Session = 
 
 
 @router.post("/admin/users")
-def users_create(request: Request, email: str = Form(..., max_length=255), name: str = Form("", max_length=255),
-                 password: str = Form(..., max_length=1024), role: str = Form("member"),
-                 csrf_token: str = Form(""), auth: Auth = Depends(page_auth),
-                 db: Session = Depends(get_db)) -> Response:
+def users_create(
+    request: Request,
+    email: str = Form(..., max_length=255),
+    name: str = Form("", max_length=255),
+    password: str = Form(..., max_length=1024),
+    role: str = Form("member"),
+    csrf_token: str = Form(""),
+    auth: Auth = Depends(page_auth),
+    db: Session = Depends(get_db),
+) -> Response:
     check_form_csrf(auth, csrf_token)
     page_role(auth, "admin")
     try:
         user = services.create_user(db, email, password, role, name)
     except services.UserError as exc:
         return _users_page(request, auth, db, 422, str(exc))
-    audit.record(db, "user.create", actor=auth.user, resource_type="user", resource_id=user.id,
-                 ip=client_ip(request), details={"role": user.role})
+    audit.record(
+        db,
+        "user.create",
+        actor=auth.user,
+        resource_type="user",
+        resource_id=user.id,
+        ip=client_ip(request),
+        details={"role": user.role},
+    )
     return redirect("/admin/users?msg=User+created")
 
 
 @router.post("/admin/users/{user_id}")
-def users_update(user_id: int, request: Request, role: str = Form(...), is_active: str = Form("0"),
-                 csrf_token: str = Form(""), auth: Auth = Depends(page_auth),
-                 db: Session = Depends(get_db)) -> Response:
+def users_update(
+    user_id: int,
+    request: Request,
+    role: str = Form(...),
+    is_active: str = Form("0"),
+    csrf_token: str = Form(""),
+    auth: Auth = Depends(page_auth),
+    db: Session = Depends(get_db),
+) -> Response:
     check_form_csrf(auth, csrf_token)
     page_role(auth, "admin")
     user = db.get(User, user_id)
@@ -271,8 +357,15 @@ def users_update(user_id: int, request: Request, role: str = Form(...), is_activ
         services.update_user(db, user, role=role, is_active=is_active == "1")
     except services.UserError as exc:
         return _users_page(request, auth, db, 422, str(exc))
-    audit.record(db, "user.update", actor=auth.user, resource_type="user", resource_id=user.id,
-                 ip=client_ip(request), details={"role": role, "is_active": is_active == "1"})
+    audit.record(
+        db,
+        "user.update",
+        actor=auth.user,
+        resource_type="user",
+        resource_id=user.id,
+        ip=client_ip(request),
+        details={"role": role, "is_active": is_active == "1"},
+    )
     return redirect("/admin/users?msg=User+updated")
 
 

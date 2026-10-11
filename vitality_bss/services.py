@@ -104,8 +104,15 @@ def admin_count(db: Session) -> int:
     return int(db.scalar(stmt) or 0)
 
 
-def update_user(db: Session, user: User, *, name: str | None = None, role: str | None = None,
-                is_active: bool | None = None, password: str | None = None) -> User:
+def update_user(
+    db: Session,
+    user: User,
+    *,
+    name: str | None = None,
+    role: str | None = None,
+    is_active: bool | None = None,
+    password: str | None = None,
+) -> User:
     if role is not None and role not in ROLES:
         raise UserError(f"role must be one of {', '.join(ROLES)}")
     demoting = (role is not None and role != "admin") or is_active is False
@@ -164,8 +171,12 @@ def apply_document_update(doc: Document, update: DocumentUpdate) -> list[str]:
         changed.append("status")
     elif changed:
         fields = Fields(
-            patient_name=doc.patient_name, patient_id=doc.patient_id, claim_number=doc.claim_number,
-            service_date=doc.service_date, billed_amount=doc.billed_amount, insurer=doc.insurer,
+            patient_name=doc.patient_name,
+            patient_id=doc.patient_id,
+            claim_number=doc.claim_number,
+            service_date=doc.service_date,
+            billed_amount=doc.billed_amount,
+            insurer=doc.insurer,
         )
         keep = [r for r in doc.review_reasons if not r.startswith("missing_") and r != "unclassified"]
         if doc.doc_type == UNCLASSIFIED:

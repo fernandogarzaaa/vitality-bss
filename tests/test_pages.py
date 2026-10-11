@@ -38,8 +38,14 @@ def test_bad_login_shows_error(client):
 
 def test_all_pages_render_for_admin(client):
     browser_login(client)
-    for path, needle in [("/", "Processing Workflow"), ("/documents", "All Documents"), ("/binders", "Patient Binders"),
-                         ("/admin/users", "Add user"), ("/admin/audit", "Audit log"), ("/account", "Change password")]:
+    for path, needle in [
+        ("/", "Processing Workflow"),
+        ("/documents", "All Documents"),
+        ("/binders", "Patient Binders"),
+        ("/admin/users", "Add user"),
+        ("/admin/audit", "Audit log"),
+        ("/account", "Change password"),
+    ]:
         r = client.get(path)
         assert r.status_code == 200, path
         assert needle in r.text
@@ -50,16 +56,24 @@ def test_all_pages_render_for_admin(client):
 def test_dashboard_content(client):
     browser_login(client)
     r = client.get("/")
-    for needle in ("Total Documents", "Duplicates Removed", "Documents Processed", "Time Saved",
-                   "Recent Documents", "No documents yet"):
+    for needle in (
+        "Total Documents",
+        "Duplicates Removed",
+        "Documents Processed",
+        "Time Saved",
+        "Recent Documents",
+        "No documents yet",
+    ):
         assert needle in r.text
 
 
 def test_upload_edit_binder_flow(client):
     csrf = browser_login(client)
-    files = [("files", ("eob_PT-7777.pdf", eob_pdf(), "application/pdf")),
-             ("files", ("copy.pdf", eob_pdf(), "application/pdf")),
-             ("files", ("bad.txt", b"nope", "text/plain"))]
+    files = [
+        ("files", ("eob_PT-7777.pdf", eob_pdf(), "application/pdf")),
+        ("files", ("copy.pdf", eob_pdf(), "application/pdf")),
+        ("files", ("bad.txt", b"nope", "text/plain")),
+    ]
     assert client.post("/documents/upload", data={"csrf_token": "x"}, files=files).status_code == 403
     r = client.post("/documents/upload", data={"csrf_token": csrf}, files=files)
     assert r.status_code == 200
@@ -71,9 +85,17 @@ def test_upload_edit_binder_flow(client):
     assert "Test Person" in r.text and "Edit Fields" in r.text
     assert client.get("/documents/999", headers={"accept": "text/html"}).status_code == 404
 
-    r = client.post("/documents/1/edit", data={"csrf_token": csrf, "patient_name": "New Name", "doc_type": "EOB",
-                                               "billed_amount": "12.50", "service_date": "2026-01-01"},
-                    follow_redirects=False)
+    r = client.post(
+        "/documents/1/edit",
+        data={
+            "csrf_token": csrf,
+            "patient_name": "New Name",
+            "doc_type": "EOB",
+            "billed_amount": "12.50",
+            "service_date": "2026-01-01",
+        },
+        follow_redirects=False,
+    )
     assert r.status_code == 303
     assert r.headers["location"] == "/documents/1?msg=Saved"
     page = client.get("/documents/1?msg=Saved").text
@@ -108,8 +130,10 @@ def test_documents_status_filter(client):
 def test_viewer_is_read_only(client):
     browser_login(client)
     client.cookies.clear()
-    headers = {"Authorization": "Bearer " + client.post(
-        "/api/auth/login", json={"email": ADMIN[0], "password": ADMIN[1]}).json()["access_token"]}
+    headers = {
+        "Authorization": "Bearer "
+        + client.post("/api/auth/login", json={"email": ADMIN[0], "password": ADMIN[1]}).json()["access_token"]
+    }
     client.cookies.clear()
     make_user(client, headers, "viewer@example.test", "viewer")
     client.cookies.clear()
@@ -129,23 +153,30 @@ def test_viewer_is_read_only(client):
 
 def test_admin_user_forms(client):
     csrf = browser_login(client)
-    r = client.post("/admin/users", data={"csrf_token": csrf, "email": "new@example.test", "password": "weak",
-                                          "role": "member"})
+    r = client.post(
+        "/admin/users", data={"csrf_token": csrf, "email": "new@example.test", "password": "weak", "role": "member"}
+    )
     assert r.status_code == 422
     assert "at least" in r.text
-    r = client.post("/admin/users", data={"csrf_token": csrf, "email": "new@example.test", "password": PASSWORD,
-                                          "role": "member", "name": "New"}, follow_redirects=False)
+    r = client.post(
+        "/admin/users",
+        data={"csrf_token": csrf, "email": "new@example.test", "password": PASSWORD, "role": "member", "name": "New"},
+        follow_redirects=False,
+    )
     assert r.status_code == 303
     assert "new@example.test" in client.get("/admin/users").text
-    r = client.post("/admin/users/2", data={"csrf_token": csrf, "role": "viewer", "is_active": "1"},
-                    follow_redirects=False)
+    r = client.post(
+        "/admin/users/2", data={"csrf_token": csrf, "role": "viewer", "is_active": "1"}, follow_redirects=False
+    )
     assert r.status_code == 303
     r = client.post("/admin/users/1", data={"csrf_token": csrf, "role": "member", "is_active": "1"})
     assert r.status_code == 422
     assert "last active admin" in r.text
     assert client.post("/admin/users/99", data={"csrf_token": csrf, "role": "member"}).status_code == 404
-    assert client.post("/admin/users", data={"csrf_token": "x", "email": "a@b.co", "password": PASSWORD}
-                       ).status_code == 403
+    assert (
+        client.post("/admin/users", data={"csrf_token": "x", "email": "a@b.co", "password": PASSWORD}).status_code
+        == 403
+    )
 
 
 def test_account_password_change_and_logout(client):
@@ -154,8 +185,11 @@ def test_account_password_change_and_logout(client):
     assert r.status_code == 400
     r = client.post("/account/password", data={"csrf_token": csrf, "current_password": ADMIN[1], "new_password": "x"})
     assert r.status_code == 422
-    r = client.post("/account/password", data={"csrf_token": csrf, "current_password": ADMIN[1],
-                                               "new_password": PASSWORD}, follow_redirects=False)
+    r = client.post(
+        "/account/password",
+        data={"csrf_token": csrf, "current_password": ADMIN[1], "new_password": PASSWORD},
+        follow_redirects=False,
+    )
     assert r.status_code == 303
     assert r.headers["location"].startswith("/login")
     client.cookies.clear()

@@ -107,8 +107,12 @@ def create_app(run_startup: bool = True) -> FastAPI:
         if request.url.path not in UNLOGGED_PATHS:
             log.info(
                 "request",
-                extra={"method": request.method, "path": request.url.path, "status": response.status_code,
-                       "duration_ms": round((time.perf_counter() - start) * 1000, 1)},
+                extra={
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status": response.status_code,
+                    "duration_ms": round((time.perf_counter() - start) * 1000, 1),
+                },
             )
         request_id_var.reset(token)
         return response

@@ -74,8 +74,13 @@ def readyz() -> JSONResponse:
 def set_session_cookie(response: Response, token: str) -> None:
     s = get_settings()
     response.set_cookie(
-        COOKIE_NAME, token, httponly=True, secure=s.cookie_secure, samesite="strict",
-        max_age=s.ACCESS_TOKEN_EXPIRE_MINUTES * 60, path="/",
+        COOKIE_NAME,
+        token,
+        httponly=True,
+        secure=s.cookie_secure,
+        samesite="strict",
+        max_age=s.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/",
     )
 
 
@@ -84,8 +89,14 @@ def do_login(db: Session, request: Request, email: str, password: str) -> tuple[
     try:
         user = services.authenticate(db, email, password)
     except services.AuthError as exc:
-        audit.record(db, "auth.login", actor_email=email.strip().lower()[:255], success=False,
-                     ip=client_ip(request), details={"locked": exc.locked})
+        audit.record(
+            db,
+            "auth.login",
+            actor_email=email.strip().lower()[:255],
+            success=False,
+            ip=client_ip(request),
+            details={"locked": exc.locked},
+        )
         return None, str(exc)
     audit.record(db, "auth.login", actor=user, ip=client_ip(request))
     return user, ""
@@ -109,8 +120,9 @@ def revoke_sessions(db: Session, request: Request, user_id: int) -> None:
 
 
 @router.post("/auth/logout")
-def logout(request: Request, response: Response, auth: Auth = Depends(api_auth),
-           db: Session = Depends(get_db)) -> dict[str, bool]:
+def logout(
+    request: Request, response: Response, auth: Auth = Depends(api_auth), db: Session = Depends(get_db)
+) -> dict[str, bool]:
     revoke_sessions(db, request, auth.user.id)
     response.delete_cookie(COOKIE_NAME, path="/")
     return {"ok": True}
@@ -124,8 +136,9 @@ def me(auth: Auth = Depends(api_auth)) -> dict[str, object]:
 
 
 @router.post("/auth/change-password")
-def change_password(payload: PasswordChange, request: Request, user: User = Depends(api_user),
-                    db: Session = Depends(get_db)) -> dict[str, bool]:
+def change_password(
+    payload: PasswordChange, request: Request, user: User = Depends(api_user), db: Session = Depends(get_db)
+) -> dict[str, bool]:
     db_user = db.get(User, user.id)
     assert db_user is not None
     if not verify_password(payload.current_password, db_user.hashed_password):
@@ -148,32 +161,54 @@ def list_users(db: Session = Depends(get_db), _: User = Depends(require_role("ad
 
 
 @router.post("/users", response_model=UserOut, status_code=201)
-def create_user(payload: UserCreate, request: Request, db: Session = Depends(get_db),
-                admin: User = Depends(require_role("admin"))) -> User:
+def create_user(
+    payload: UserCreate, request: Request, db: Session = Depends(get_db), admin: User = Depends(require_role("admin"))
+) -> User:
     try:
         user = services.create_user(db, payload.email, payload.password, payload.role, payload.name)
     except services.UserError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    audit.record(db, "user.create", actor=admin, resource_type="user", resource_id=user.id,
-                 ip=client_ip(request), details={"role": user.role})
+    audit.record(
+        db,
+        "user.create",
+        actor=admin,
+        resource_type="user",
+        resource_id=user.id,
+        ip=client_ip(request),
+        details={"role": user.role},
+    )
     return user
 
 
 @router.patch("/users/{user_id}", response_model=UserOut)
-def update_user(user_id: int, payload: UserUpdate, request: Request, db: Session = Depends(get_db),
-                admin: User = Depends(require_role("admin"))) -> User:
+def update_user(
+    user_id: int,
+    payload: UserUpdate,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_role("admin")),
+) -> User:
     user = db.get(User, user_id)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     try:
-        services.update_user(db, user, name=payload.name, role=payload.role,
-                             is_active=payload.is_active, password=payload.password)
+        services.update_user(
+            db, user, name=payload.name, role=payload.role, is_active=payload.is_active, password=payload.password
+        )
     except services.UserError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    audit.record(db, "user.update", actor=admin, resource_type="user", resource_id=user.id,
-                 ip=client_ip(request),
-                 details={"fields": sorted(payload.model_dump(exclude_unset=True, exclude={"password"})),
-                          "password_reset": payload.password is not None})
+    audit.record(
+        db,
+        "user.update",
+        actor=admin,
+        resource_type="user",
+        resource_id=user.id,
+        ip=client_ip(request),
+        details={
+            "fields": sorted(payload.model_dump(exclude_unset=True, exclude={"password"})),
+            "password_reset": payload.password is not None,
+        },
+    )
     return user
 
 
@@ -198,24 +233,41 @@ async def handle_uploads(files: list[UploadFile], request: Request, db: Session,
         try:
             result = process_upload(db, name, data, user=user)
         except InvalidDocument as exc:
-            audit.record(db, "document.upload", actor=user, resource_type="document", success=False,
-                         ip=client_ip(request), details={"error": str(exc)})
+            audit.record(
+                db,
+                "document.upload",
+                actor=user,
+                resource_type="document",
+                success=False,
+                ip=client_ip(request),
+                details={"error": str(exc)},
+            )
             items.append(UploadItem(filename=name, ok=False, error=str(exc)))
             continue
         doc = result.document
-        audit.record(db, "document.duplicate" if result.duplicate else "document.upload", actor=user,
-                     resource_type="document", resource_id=doc.id, ip=client_ip(request),
-                     details={"doc_type": doc.doc_type, "status": doc.status})
-        items.append(UploadItem(filename=name, ok=True, duplicate=result.duplicate,
-                                document=DocumentOut.model_validate(doc)))
+        audit.record(
+            db,
+            "document.duplicate" if result.duplicate else "document.upload",
+            actor=user,
+            resource_type="document",
+            resource_id=doc.id,
+            ip=client_ip(request),
+            details={"doc_type": doc.doc_type, "status": doc.status},
+        )
+        items.append(
+            UploadItem(filename=name, ok=True, duplicate=result.duplicate, document=DocumentOut.model_validate(doc))
+        )
     return items
 
 
 @router.post("/documents", response_model=UploadOut)
 @router.post("/documents/upload", response_model=UploadOut, include_in_schema=False)
-async def upload_documents(request: Request, files: list[UploadFile] = File(...),
-                           db: Session = Depends(get_db),
-                           user: User = Depends(require_role(*WRITERS))) -> UploadOut:
+async def upload_documents(
+    request: Request,
+    files: list[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_role(*WRITERS)),
+) -> UploadOut:
     return UploadOut(uploaded=await handle_uploads(files, request, db, user))
 
 
@@ -240,34 +292,54 @@ def list_documents(
         stmt = stmt.where(Document.status == status_)
     if q:
         like = f"%{q.strip()}%"
-        stmt = stmt.where(or_(Document.filename.ilike(like), Document.patient_name.ilike(like),
-                              Document.patient_id.ilike(like), Document.claim_number.ilike(like)))
+        stmt = stmt.where(
+            or_(
+                Document.filename.ilike(like),
+                Document.patient_name.ilike(like),
+                Document.patient_id.ilike(like),
+                Document.claim_number.ilike(like),
+            )
+        )
     total = int(db.scalar(select(func.count()).select_from(stmt.subquery())) or 0)
     docs = list(db.scalars(stmt.order_by(Document.created_at.desc(), Document.id.desc()).limit(limit).offset(offset)))
-    audit.record(db, "document.list", actor=user, resource_type="document", ip=client_ip(request),
-                 details={"count": len(docs)})
-    return DocumentList(total=total, limit=limit, offset=offset,
-                        documents=[DocumentOut.model_validate(d) for d in docs])
+    audit.record(
+        db, "document.list", actor=user, resource_type="document", ip=client_ip(request), details={"count": len(docs)}
+    )
+    return DocumentList(
+        total=total, limit=limit, offset=offset, documents=[DocumentOut.model_validate(d) for d in docs]
+    )
 
 
 @router.get("/documents/{doc_id}", response_model=DocumentOut)
-def get_document(doc_id: int, request: Request, db: Session = Depends(get_db),
-                 user: User = Depends(api_user)) -> Document:
+def get_document(
+    doc_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(api_user)
+) -> Document:
     doc = get_doc_or_404(db, doc_id)
-    audit.record(db, "document.view", actor=user, resource_type="document", resource_id=doc.id,
-                 ip=client_ip(request))
+    audit.record(db, "document.view", actor=user, resource_type="document", resource_id=doc.id, ip=client_ip(request))
     return doc
 
 
 @router.patch("/documents/{doc_id}", response_model=DocumentOut)
-def update_document(doc_id: int, payload: DocumentUpdate, request: Request, db: Session = Depends(get_db),
-                    user: User = Depends(require_role(*WRITERS))) -> Document:
+def update_document(
+    doc_id: int,
+    payload: DocumentUpdate,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_role(*WRITERS)),
+) -> Document:
     doc = get_doc_or_404(db, doc_id)
     changed = services.apply_document_update(doc, payload)
     db.commit()
     db.refresh(doc)
-    audit.record(db, "document.update", actor=user, resource_type="document", resource_id=doc.id,
-                 ip=client_ip(request), details={"fields": changed})
+    audit.record(
+        db,
+        "document.update",
+        actor=user,
+        resource_type="document",
+        resource_id=doc.id,
+        ip=client_ip(request),
+        details={"fields": changed},
+    )
     return doc
 
 
@@ -277,14 +349,16 @@ def do_reprocess(db: Session, request: Request, user: User, doc_id: int) -> Docu
         reprocess(db, doc)
     except StorageError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    audit.record(db, "document.reprocess", actor=user, resource_type="document", resource_id=doc.id,
-                 ip=client_ip(request))
+    audit.record(
+        db, "document.reprocess", actor=user, resource_type="document", resource_id=doc.id, ip=client_ip(request)
+    )
     return doc
 
 
 @router.post("/documents/{doc_id}/reprocess", response_model=DocumentOut)
-def reprocess_document(doc_id: int, request: Request, db: Session = Depends(get_db),
-                       user: User = Depends(require_role(*WRITERS))) -> Document:
+def reprocess_document(
+    doc_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_role(*WRITERS))
+) -> Document:
     return do_reprocess(db, request, user, doc_id)
 
 
@@ -294,15 +368,20 @@ def document_file_response(db: Session, request: Request, user: User, doc_id: in
         data = get_store().get(doc.storage_key, doc.encrypted)
     except StorageError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    audit.record(db, "document.download", actor=user, resource_type="document", resource_id=doc.id,
-                 ip=client_ip(request))
-    return Response(data, media_type="application/pdf",
-                    headers={"Content-Disposition": f'attachment; filename="document-{doc.id}.pdf"'})
+    audit.record(
+        db, "document.download", actor=user, resource_type="document", resource_id=doc.id, ip=client_ip(request)
+    )
+    return Response(
+        data,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="document-{doc.id}.pdf"'},
+    )
 
 
 @router.get("/documents/{doc_id}/file")
-def download_document(doc_id: int, request: Request, db: Session = Depends(get_db),
-                      user: User = Depends(api_user)) -> Response:
+def download_document(
+    doc_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(api_user)
+) -> Response:
     return document_file_response(db, request, user, doc_id)
 
 
@@ -318,13 +397,15 @@ def do_delete(db: Session, request: Request, admin: User, doc_id: int) -> None:
     db.delete(doc)
     db.commit()
     get_store().delete(key)
-    audit.record(db, "document.delete", actor=admin, resource_type="document", resource_id=doc_id,
-                 ip=client_ip(request))
+    audit.record(
+        db, "document.delete", actor=admin, resource_type="document", resource_id=doc_id, ip=client_ip(request)
+    )
 
 
 @router.delete("/documents/{doc_id}", status_code=204)
-def delete_document(doc_id: int, request: Request, db: Session = Depends(get_db),
-                    admin: User = Depends(require_role("admin"))) -> Response:
+def delete_document(
+    doc_id: int, request: Request, db: Session = Depends(get_db), admin: User = Depends(require_role("admin"))
+) -> Response:
     do_delete(db, request, admin, doc_id)
     return Response(status_code=204)
 
@@ -334,10 +415,14 @@ def list_duplicates(db: Session = Depends(get_db), _: User = Depends(api_user)) 
     exact = db.scalars(select(DuplicateUpload).order_by(DuplicateUpload.id.desc()).limit(500))
     near = db.scalars(select(Document).where(Document.near_duplicate_of_id.is_not(None)))
     return {
-        "exact": [{"id": d.id, "filename": d.filename, "document_id": d.document_id,
-                   "created_at": d.created_at.isoformat()} for d in exact],
-        "near": [{"document_id": d.id, "near_duplicate_of_id": d.near_duplicate_of_id,
-                  "score": d.near_duplicate_score} for d in near],
+        "exact": [
+            {"id": d.id, "filename": d.filename, "document_id": d.document_id, "created_at": d.created_at.isoformat()}
+            for d in exact
+        ],
+        "near": [
+            {"document_id": d.id, "near_duplicate_of_id": d.near_duplicate_of_id, "score": d.near_duplicate_score}
+            for d in near
+        ],
     }
 
 
@@ -352,11 +437,17 @@ def get_stats(db: Session = Depends(get_db), _: User = Depends(api_user)) -> dic
 @router.get("/binders", response_model=list[BinderOut])
 def list_binders(request: Request, db: Session = Depends(get_db), user: User = Depends(api_user)) -> list[BinderOut]:
     binders = load_binders(db)
-    audit.record(db, "binder.list", actor=user, resource_type="binder", ip=client_ip(request),
-                 details={"count": len(binders)})
+    audit.record(
+        db, "binder.list", actor=user, resource_type="binder", ip=client_ip(request), details={"count": len(binders)}
+    )
     return [
-        BinderOut(patient_id=b.patient_id, patient_name=b.patient_name, total_billed=b.total_billed,
-                  ready=b.ready, documents=[DocumentOut.model_validate(d) for d in b.documents])
+        BinderOut(
+            patient_id=b.patient_id,
+            patient_name=b.patient_name,
+            total_billed=b.total_billed,
+            ready=b.ready,
+            documents=[DocumentOut.model_validate(d) for d in b.documents],
+        )
         for b in binders.values()
     ]
 
@@ -371,22 +462,34 @@ def binder_pdf_response(db: Session, request: Request, user: User, patient_id: s
         pdf = render_binder(binder, get_store(), generated_by=user.email)
     except StorageError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    audit.record(db, "binder.generate", actor=user, resource_type="binder", resource_id=pid,
-                 ip=client_ip(request), details={"documents": len(binder.documents)})
+    audit.record(
+        db,
+        "binder.generate",
+        actor=user,
+        resource_type="binder",
+        resource_id=pid,
+        ip=client_ip(request),
+        details={"documents": len(binder.documents)},
+    )
     safe = "".join(ch for ch in pid if ch.isalnum() or ch in "-_") or "unassigned"
-    return StreamingResponse(io.BytesIO(pdf), media_type="application/pdf",
-                             headers={"Content-Disposition": f'attachment; filename="binder_{safe}.pdf"'})
+    return StreamingResponse(
+        io.BytesIO(pdf),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="binder_{safe}.pdf"'},
+    )
 
 
 @router.get("/binders/{patient_id}/pdf")
-def binder_pdf(patient_id: str, request: Request, db: Session = Depends(get_db),
-               user: User = Depends(api_user)) -> StreamingResponse:
+def binder_pdf(
+    patient_id: str, request: Request, db: Session = Depends(get_db), user: User = Depends(api_user)
+) -> StreamingResponse:
     return binder_pdf_response(db, request, user, patient_id)
 
 
 @router.post("/binders/generate")
-def generate_binder(payload: GenerateBinderIn, request: Request, db: Session = Depends(get_db),
-                    user: User = Depends(api_user)) -> StreamingResponse:
+def generate_binder(
+    payload: GenerateBinderIn, request: Request, db: Session = Depends(get_db), user: User = Depends(api_user)
+) -> StreamingResponse:
     return binder_pdf_response(db, request, user, payload.patient_id)
 
 
@@ -394,10 +497,13 @@ def generate_binder(payload: GenerateBinderIn, request: Request, db: Session = D
 
 
 @router.get("/audit", response_model=list[AuditOut])
-def list_audit(db: Session = Depends(get_db), _: User = Depends(require_role("admin")),
-               action: str | None = Query(default=None, max_length=64),
-               limit: int = Query(default=100, ge=1, le=1000),
-               offset: int = Query(default=0, ge=0)) -> list[AuditEvent]:
+def list_audit(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_role("admin")),
+    action: str | None = Query(default=None, max_length=64),
+    limit: int = Query(default=100, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0),
+) -> list[AuditEvent]:
     stmt = select(AuditEvent)
     if action:
         stmt = stmt.where(AuditEvent.action == action)

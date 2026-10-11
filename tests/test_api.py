@@ -43,8 +43,10 @@ def test_security_headers(client):
     assert len(r.headers["x-request-id"]) == 32
     assert "strict-transport-security" not in r.headers
     assert client.get("/healthz", headers={"X-Request-ID": "abc-123"}).headers["x-request-id"] == "abc-123"
-    assert "cache-control" not in client.get("/static/app.css").headers or \
-        client.get("/static/app.css").headers.get("cache-control") != "no-store"
+    assert (
+        "cache-control" not in client.get("/static/app.css").headers
+        or client.get("/static/app.css").headers.get("cache-control") != "no-store"
+    )
 
 
 def test_hsts_when_secure(client, set_env):
@@ -103,9 +105,17 @@ def test_lockout_after_repeated_failures(client, set_env):
 
 
 def test_unauthenticated_api_is_401(client):
-    for method, path in [("get", "/api/documents"), ("get", "/api/documents/1"), ("get", "/api/binders"),
-                         ("get", "/api/stats"), ("get", "/api/audit"), ("get", "/api/users"),
-                         ("get", "/api/documents/1/file"), ("get", "/api/duplicates"), ("get", "/api/auth/me")]:
+    for method, path in [
+        ("get", "/api/documents"),
+        ("get", "/api/documents/1"),
+        ("get", "/api/binders"),
+        ("get", "/api/stats"),
+        ("get", "/api/audit"),
+        ("get", "/api/users"),
+        ("get", "/api/documents/1/file"),
+        ("get", "/api/duplicates"),
+        ("get", "/api/auth/me"),
+    ]:
         r = getattr(client, method)(path)
         assert r.status_code == 401, path
         assert r.headers["www-authenticate"] == "Bearer"
@@ -139,14 +149,19 @@ def test_cookie_auth_requires_csrf_for_writes(client):
 
 
 def test_change_password(client, admin_headers):
-    r = client.post("/api/auth/change-password", headers=admin_headers,
-                    json={"current_password": "wrong", "new_password": PASSWORD})
+    r = client.post(
+        "/api/auth/change-password", headers=admin_headers, json={"current_password": "wrong", "new_password": PASSWORD}
+    )
     assert r.status_code == 400
-    r = client.post("/api/auth/change-password", headers=admin_headers,
-                    json={"current_password": ADMIN[1], "new_password": "weak"})
+    r = client.post(
+        "/api/auth/change-password", headers=admin_headers, json={"current_password": ADMIN[1], "new_password": "weak"}
+    )
     assert r.status_code == 422
-    r = client.post("/api/auth/change-password", headers=admin_headers,
-                    json={"current_password": ADMIN[1], "new_password": PASSWORD})
+    r = client.post(
+        "/api/auth/change-password",
+        headers=admin_headers,
+        json={"current_password": ADMIN[1], "new_password": PASSWORD},
+    )
     assert r.status_code == 200
     assert client.get("/api/auth/me", headers=admin_headers).status_code == 401  # sessions revoked
     login(client, ADMIN[0], PASSWORD)
@@ -244,20 +259,26 @@ def test_upload_list_get_update_delete(client, admin_headers):
     assert client.get(f"/api/documents/{doc_id}", headers=admin_headers).json()["id"] == doc_id
     assert client.get("/api/documents/999", headers=admin_headers).status_code == 404
 
-    r = client.patch(f"/api/documents/{doc_id}", headers=admin_headers,
-                     json={"patient_name": " Edited Name ", "billed_amount": "$1,000.50", "patient_id": "pt-1"})
+    r = client.patch(
+        f"/api/documents/{doc_id}",
+        headers=admin_headers,
+        json={"patient_name": " Edited Name ", "billed_amount": "$1,000.50", "patient_id": "pt-1"},
+    )
     assert r.status_code == 200
     assert r.json()["patient_name"] == "Edited Name"
     assert r.json()["billed_amount"] == 1000.5
     assert r.json()["patient_id"] == "PT-1"
-    assert client.patch(f"/api/documents/{doc_id}", headers=admin_headers,
-                        json={"service_date": "09/01/2026"}).status_code == 422
-    assert client.patch(f"/api/documents/{doc_id}", headers=admin_headers,
-                        json={"doc_type": "Recipe"}).status_code == 422
-    assert client.patch(f"/api/documents/{doc_id}", headers=admin_headers,
-                        json={"billed_amount": "-5"}).status_code == 422
-    assert client.patch(f"/api/documents/{doc_id}", headers=admin_headers,
-                        json={"unknown": "x"}).status_code == 422
+    assert (
+        client.patch(f"/api/documents/{doc_id}", headers=admin_headers, json={"service_date": "09/01/2026"}).status_code
+        == 422
+    )
+    assert (
+        client.patch(f"/api/documents/{doc_id}", headers=admin_headers, json={"doc_type": "Recipe"}).status_code == 422
+    )
+    assert (
+        client.patch(f"/api/documents/{doc_id}", headers=admin_headers, json={"billed_amount": "-5"}).status_code == 422
+    )
+    assert client.patch(f"/api/documents/{doc_id}", headers=admin_headers, json={"unknown": "x"}).status_code == 422
     r = client.patch(f"/api/documents/{doc_id}", headers=admin_headers, json={"billed_amount": None})
     assert r.json()["billed_amount"] is None
     assert r.json()["status"] == "needs_review"
@@ -305,8 +326,9 @@ def test_too_many_files(client, admin_headers, set_env):
 
 
 def test_legacy_upload_route(client, admin_headers):
-    r = client.post("/api/documents/upload", headers=admin_headers,
-                    files=[("files", ("eob.pdf", eob_pdf(), "application/pdf"))])
+    r = client.post(
+        "/api/documents/upload", headers=admin_headers, files=[("files", ("eob.pdf", eob_pdf(), "application/pdf"))]
+    )
     assert r.status_code == 200
 
 

@@ -23,8 +23,9 @@ def _reply(content: str, status: int = 200) -> httpx.Response:
 
 
 def _client(handler: Any, retries: int = 0) -> ai.OpenAICompatibleClient:
-    return ai.OpenAICompatibleClient("http://llm.local/v1/", "k", "m", max_retries=retries,
-                                     transport=httpx.MockTransport(handler), backoff_seconds=0)
+    return ai.OpenAICompatibleClient(
+        "http://llm.local/v1/", "k", "m", max_retries=retries, transport=httpx.MockTransport(handler), backoff_seconds=0
+    )
 
 
 class FakeLLM:
@@ -184,10 +185,17 @@ def test_enrich_rules_win_when_present():
 def test_enrich_fills_blanks_only_with_values_in_text():
     text = "Name on file is Jane  Doe. Ref X-77. Charge 1,234.56 Aetna on 2026-09-01"
     rules = Classification(UNCLASSIFIED, 0.0, {})
-    llm = FakeLLM({
-        "doc_type": "Invoice", "patient_name": "jane doe", "patient_id": "x-77", "claim_number": "INVENTED",
-        "service_date": "09/01/2026", "billed_amount": "1234.56", "insurer": "Aetna",
-    })
+    llm = FakeLLM(
+        {
+            "doc_type": "Invoice",
+            "patient_name": "jane doe",
+            "patient_id": "x-77",
+            "claim_number": "INVENTED",
+            "service_date": "09/01/2026",
+            "billed_amount": "1234.56",
+            "insurer": "Aetna",
+        }
+    )
     out = ai.enrich(llm, "scan.pdf", text, rules, _empty_fields())
     assert out.fields["patient_name"] == "jane doe"
     assert out.fields["patient_id"] == "X-77"
@@ -218,8 +226,9 @@ def test_enrich_integer_amount_forms():
 
 
 def test_enrich_unknown_doc_type_rejected():
-    out = ai.enrich(FakeLLM({"doc_type": "Recipe"}), "x.pdf", "t", Classification(UNCLASSIFIED, 0.0, {}),
-                    _empty_fields())
+    out = ai.enrich(
+        FakeLLM({"doc_type": "Recipe"}), "x.pdf", "t", Classification(UNCLASSIFIED, 0.0, {}), _empty_fields()
+    )
     assert out.doc_type == UNCLASSIFIED
     assert "doc_type" in out.rejected
 

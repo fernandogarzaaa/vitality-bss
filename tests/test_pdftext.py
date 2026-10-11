@@ -22,8 +22,11 @@ needs_ocr = pytest.mark.skipif(not pdftext.ocr_available(), reason="tesseract/pd
 def scanned_pdf(lines: list[str], tmp: Path) -> bytes:
     """A PDF whose only content is a raster image of text (like a scan)."""
     (tmp / "src.pdf").write_bytes(make_pdf("CLINICAL NOTE", lines, banner=False))
-    subprocess.run(["pdftoppm", "-r", "200", "-png", "-singlefile", str(tmp / "src.pdf"), str(tmp / "img")],
-                   capture_output=True, check=True)
+    subprocess.run(
+        ["pdftoppm", "-r", "200", "-png", "-singlefile", str(tmp / "src.pdf"), str(tmp / "img")],
+        capture_output=True,
+        check=True,
+    )
     png = (tmp / "img.png").read_bytes()
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=letter)

@@ -8,8 +8,15 @@ GOOD_SECRET = "s" * 40
 
 
 def make(**kw):  # type: ignore[no-untyped-def]
-    base = {"SECRET_KEY": GOOD_SECRET, "ADMIN_PASSWORD": "", "ENCRYPTION_KEYS": "", "AI_MODE": "off",
-            "APP_ENV": "development", "SEED_DEMO_DATA": False, "REQUIRE_ENCRYPTION": False}
+    base = {
+        "SECRET_KEY": GOOD_SECRET,
+        "ADMIN_PASSWORD": "",
+        "ENCRYPTION_KEYS": "",
+        "AI_MODE": "off",
+        "APP_ENV": "development",
+        "SEED_DEMO_DATA": False,
+        "REQUIRE_ENCRYPTION": False,
+    }
     base.update(kw)
     return Settings(_env_file=None, **base)
 
@@ -43,8 +50,14 @@ def test_admin_email_lowercased():
 
 @pytest.mark.parametrize(
     ("url", "local"),
-    [("http://localhost:11434/v1", True), ("http://127.0.0.1:8000/v1", True), ("http://ollama:11434/v1", True),
-     ("https://api.groq.com/openai/v1", False), ("https://openrouter.ai/api/v1", False), ("", False)],
+    [
+        ("http://localhost:11434/v1", True),
+        ("http://127.0.0.1:8000/v1", True),
+        ("http://ollama:11434/v1", True),
+        ("https://api.groq.com/openai/v1", False),
+        ("https://openrouter.ai/api/v1", False),
+        ("", False),
+    ],
 )
 def test_llm_is_local(url, local):
     assert make(LLM_BASE_URL=url).llm_is_local is local

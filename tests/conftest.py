@@ -102,8 +102,9 @@ def make_user(client: TestClient, headers: dict[str, str], email: str, role: str
     return login(client, email, PASSWORD)
 
 
-def eob_pdf(patient_id: str = "PT-7777", name: str = "Test Person", amount: str = "500.00",
-            extra: list[str] | None = None) -> bytes:
+def eob_pdf(
+    patient_id: str = "PT-7777", name: str = "Test Person", amount: str = "500.00", extra: list[str] | None = None
+) -> bytes:
     return make_pdf(
         "EXPLANATION OF BENEFITS",
         [

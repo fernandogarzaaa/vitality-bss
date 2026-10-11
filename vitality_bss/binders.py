@@ -76,8 +76,9 @@ def _cover_pdf(binder: Binder, page_starts: list[int], generated_by: str) -> byt
         c.setFont("Helvetica", 11)
         c.drawString(72, height - 96, f"Patient: {binder.patient_name or 'Unknown'}   ID: {binder.patient_id}")
         c.drawString(72, height - 112, f"Generated {stamp} by {generated_by}")
-        c.drawString(72, height - 128,
-                     f"Documents: {len(binder.documents)}   Invoiced total: ${binder.total_billed:,.2f}")
+        c.drawString(
+            72, height - 128, f"Documents: {len(binder.documents)}   Invoiced total: ${binder.total_billed:,.2f}"
+        )
         c.setFont("Helvetica-Bold", 11)
         for x, label in zip(COLUMNS, ("#", "Type", "Service date", "Amount", "Page"), strict=True):
             c.drawString(x, height - 160, label)

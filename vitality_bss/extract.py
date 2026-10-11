@@ -8,13 +8,30 @@ from datetime import date, datetime
 from typing import TypedDict
 
 INSURERS: tuple[str, ...] = (
-    "BlueCross BlueShield", "Blue Cross Blue Shield", "Aetna", "Cigna", "UnitedHealthcare",
-    "United Healthcare", "Humana", "Kaiser Permanente", "Anthem", "Centene", "Molina",
-    "Medicare", "Medicaid", "Tricare", "PhilHealth",
+    "BlueCross BlueShield",
+    "Blue Cross Blue Shield",
+    "Aetna",
+    "Cigna",
+    "UnitedHealthcare",
+    "United Healthcare",
+    "Humana",
+    "Kaiser Permanente",
+    "Anthem",
+    "Centene",
+    "Molina",
+    "Medicare",
+    "Medicaid",
+    "Tricare",
+    "PhilHealth",
 )
 
 FIELD_NAMES: tuple[str, ...] = (
-    "patient_name", "patient_id", "claim_number", "service_date", "billed_amount", "insurer",
+    "patient_name",
+    "patient_id",
+    "claim_number",
+    "service_date",
+    "billed_amount",
+    "insurer",
 )
 
 

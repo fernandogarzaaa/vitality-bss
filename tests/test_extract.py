@@ -28,8 +28,14 @@ def test_extract_full_document():
 
 def test_extract_empty():
     f = extract_fields("nothing to see here")
-    assert f == {"patient_name": "", "patient_id": "", "claim_number": "", "service_date": "",
-                 "billed_amount": None, "insurer": ""}
+    assert f == {
+        "patient_name": "",
+        "patient_id": "",
+        "claim_number": "",
+        "service_date": "",
+        "billed_amount": None,
+        "insurer": "",
+    }
     assert extract_fields(None)["patient_id"] == ""  # type: ignore[arg-type]
 
 
@@ -102,8 +108,15 @@ def test_insurer_detection():
 
 @pytest.mark.parametrize(
     ("raw", "iso"),
-    [("09/01/2026", "2026-09-01"), ("9/1/26", "2026-09-01"), ("2026-09-01", "2026-09-01"),
-     (" 2026-09-01 ", "2026-09-01"), ("2026/09/01", ""), ("", ""), ("garbage", "")],
+    [
+        ("09/01/2026", "2026-09-01"),
+        ("9/1/26", "2026-09-01"),
+        ("2026-09-01", "2026-09-01"),
+        (" 2026-09-01 ", "2026-09-01"),
+        ("2026/09/01", ""),
+        ("", ""),
+        ("garbage", ""),
+    ],
 )
 def test_normalize_date(raw, iso):
     assert normalize_date(raw) == iso
@@ -115,17 +128,33 @@ def test_normalize_date_none():
 
 @pytest.mark.parametrize(
     ("raw", "value"),
-    [("$1,234.50", 1234.5), ("12", 12.0), (12, 12.0), (3.14159, 3.14), ("0", 0.0), (" $ 5 ", 5.0),
-     ("-1", None), (-0.5, None), ("abc", None), ("", None), ("  ", None), (None, None), (True, None),
-     (float("nan"), None), (float("inf"), None), ("inf", None)],
+    [
+        ("$1,234.50", 1234.5),
+        ("12", 12.0),
+        (12, 12.0),
+        (3.14159, 3.14),
+        ("0", 0.0),
+        (" $ 5 ", 5.0),
+        ("-1", None),
+        (-0.5, None),
+        ("abc", None),
+        ("", None),
+        ("  ", None),
+        (None, None),
+        (True, None),
+        (float("nan"), None),
+        (float("inf"), None),
+        ("inf", None),
+    ],
 )
 def test_parse_amount(raw, value):
     assert parse_amount(raw) == value
 
 
 def _fields(**over):  # type: ignore[no-untyped-def]
-    base = Fields(patient_name="A B", patient_id="PT-1", claim_number="", service_date="2026-01-01",
-                  billed_amount=1.0, insurer="")
+    base = Fields(
+        patient_name="A B", patient_id="PT-1", claim_number="", service_date="2026-01-01", billed_amount=1.0, insurer=""
+    )
     base.update(over)  # type: ignore[typeddict-item]
     return base
 

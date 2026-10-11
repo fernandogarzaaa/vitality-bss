@@ -229,9 +229,12 @@ def enrich(
     elif llm_type is not None:
         rejected.append("doc_type")
     merged = Fields(
-        patient_name=values["patient_name"], patient_id=values["patient_id"],
-        claim_number=values["claim_number"], service_date=values["service_date"],
-        billed_amount=values["billed_amount"], insurer=values["insurer"],
+        patient_name=values["patient_name"],
+        patient_id=values["patient_id"],
+        claim_number=values["claim_number"],
+        service_date=values["service_date"],
+        billed_amount=values["billed_amount"],
+        insurer=values["insurer"],
     )
     return Enrichment(doc_type, round(confidence, 3), classifier, merged, accepted, rejected)
 

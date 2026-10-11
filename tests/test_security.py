@@ -65,21 +65,25 @@ def test_token_rejects_tampering_and_wrong_key():
     assert security.decode_access_token(tok + "x") is None
     forged = jwt.encode({"sub": "1", "iat": 0, "exp": 9999999999, "iss": "vitality-bss"}, "o" * 40, algorithm="HS256")
     assert security.decode_access_token(forged) is None
-    wrong_iss = jwt.encode({"sub": "1", "iat": 0, "exp": 9999999999, "iss": "x"},
-                           get_settings().SECRET_KEY, algorithm="HS256")
+    wrong_iss = jwt.encode(
+        {"sub": "1", "iat": 0, "exp": 9999999999, "iss": "x"}, get_settings().SECRET_KEY, algorithm="HS256"
+    )
     assert security.decode_access_token(wrong_iss) is None
-    no_sub = jwt.encode({"iat": 0, "exp": 9999999999, "iss": "vitality-bss"},
-                        get_settings().SECRET_KEY, algorithm="HS256")
+    no_sub = jwt.encode(
+        {"iat": 0, "exp": 9999999999, "iss": "vitality-bss"}, get_settings().SECRET_KEY, algorithm="HS256"
+    )
     assert security.decode_access_token(no_sub) is None
-    bad_sub = jwt.encode({"sub": "abc", "iat": 0, "exp": 9999999999, "iss": "vitality-bss"},
-                         get_settings().SECRET_KEY, algorithm="HS256")
+    bad_sub = jwt.encode(
+        {"sub": "abc", "iat": 0, "exp": 9999999999, "iss": "vitality-bss"}, get_settings().SECRET_KEY, algorithm="HS256"
+    )
     assert security.decode_access_token(bad_sub) is None
     assert security.decode_access_token("garbage") is None
 
 
 def test_token_without_version_defaults_zero():
-    tok = jwt.encode({"sub": "4", "iat": 0, "exp": 9999999999, "iss": "vitality-bss"},
-                     get_settings().SECRET_KEY, algorithm="HS256")
+    tok = jwt.encode(
+        {"sub": "4", "iat": 0, "exp": 9999999999, "iss": "vitality-bss"}, get_settings().SECRET_KEY, algorithm="HS256"
+    )
     assert security.decode_access_token(tok) == security.TokenClaims(4, 0)
 
 
