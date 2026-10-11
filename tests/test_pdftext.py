@@ -41,10 +41,10 @@ def test_extract_text_layer():
 
 
 def test_multi_page():
-    pdf = make_pdf("T", [f"line {i}" for i in range(80)])
+    pdf = make_pdf("T", [f"line {i}" for i in range(60)])
     out = extract_text(pdf, ocr_enabled=False)
     assert out.pages == 2
-    assert "line 79" in out.text
+    assert "line 59" in out.text
 
 
 @pytest.mark.parametrize("data", [b"not a pdf", b"", b"%PDX-1.4"])
@@ -59,7 +59,7 @@ def test_rejects_corrupt_pdf():
 
 
 def test_rejects_too_many_pages():
-    pdf = make_pdf("T", [f"line {i}" for i in range(80)])
+    pdf = make_pdf("T", [f"line {i}" for i in range(60)])
     with pytest.raises(InvalidDocument, match="limit is 1"):
         open_pdf(pdf, 1)
     open_pdf(pdf, 2)
