@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% set active = 'documents' %}
+{% block title %}Documents - {{ app_name }}{% endblock %}
+{% block content %}
+<h1>Documents</h1>
+<p class="sub">Upload PDFs to classify, extract fields, and deduplicate</p>
+{% if user.role in ('admin', 'member') %}
+<div class="card">
+  <h2>Upload PDFs</h2>
+  <form action="/documents/upload" method="post" enctype="multipart/form-data" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="file" name="files" accept="application/pdf" multiple required>
+    <button type="submit" class="btn dark">Process</button>
+  </form>
+  <p class="muted">Up to {{ max_mb }} MB per file. Identical files are detected by content hash and never double-counted; scanned pages are OCR'd locally.</p>
+</div>
+{% endif %}
+{% if results %}
+<div class="card">
+  <h2>Upload results</h2>
+  <table>
+    <thead><tr><th>File</th><th>Result</th></tr></thead>
+    <tbody>
+    {% for r in results %}
+      <tr><td class="trunc">{{ r.filename }}</td>
+        <td>{% if not r.ok %}<span class="bad">{{ r.error }}</span>
+            {% elif r.duplicate %}<span class="badge grey">duplicate of #{{ r.document.id }}</span>
+            {% else %}<a href="/documents/{{ r.document.id }}">#{{ r.document.id }}</a> <span class="badge">{{ r.document.doc_type }}</span>
+              <span class="badge {{ 'ok' if r.document.status == 'processed' else 'review' }}">{{ r.document.status|replace('_', ' ') }}</span>{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+<div class="card">
+  <div class="inline between">
+    <h2>All Documents ({{ documents|length }})</h2>
+    <div class="inline"><a href="/documents">All</a> &middot; <a href="/documents?status=needs_review">Needs review</a> &middot; <a href="/documents?status=processed">Processed</a></div>
+  </div>
+  {% if documents %}
+  <table>
+    <thead><tr><th>Filename</th><th>Type</th><th>Patient</th><th>Patient ID</th><th>Claim #</th><th>Amount</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for doc in documents %}
+      <tr>
+        <td class="trunc"><a href="/documents/{{ doc.id }}">{{ doc.filename }}</a></td>
+        <td><span class="badge">{{ doc.doc_type }}</span></td>
+        <td>{{ doc.patient_name or "—" }}</td>
+        <td>{{ doc.patient_id or "—" }}</td>
+        <td>{{ doc.claim_number or "—" }}</td>
+        <td>{% if doc.billed_amount is not none %}${{ "{:,.2f}".format(doc.billed_amount) }}{% else %}—{% endif %}</td>
+        <td><span class="badge {{ 'ok' if doc.status == 'processed' else 'review' }}">{{ doc.status|replace('_', ' ') }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No documents match.</p>
+  {% endif %}
+</div>
+{% endblock %}

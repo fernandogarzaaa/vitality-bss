@@ -17,3 +17,8 @@ data/app.db
 .env
 .env.*
 !.env.example
+data/
+dist/
+build/
+*.egg-info/
+.testteeth/

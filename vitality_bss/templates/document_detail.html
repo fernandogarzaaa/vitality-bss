@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% set active = 'documents' %}
+{% block title %}Document #{{ doc.id }} - {{ app_name }}{% endblock %}
+{% block content %}
+<a href="/documents">&larr; Back to documents</a>
+<h1 class="trunc full">{{ doc.filename }}</h1>
+<p class="sub"><span class="badge">{{ doc.doc_type }}</span>
+  <span class="badge {{ 'ok' if doc.status == 'processed' else 'review' }}">{{ doc.status|replace('_', ' ') }}</span>
+  &middot; {{ doc.pages }} page(s){% if doc.ocr_pages %} &middot; {{ doc.ocr_pages }} OCR'd{% endif %}
+  &middot; classifier: {{ doc.classifier }} ({{ "%.0f"|format(doc.classification_confidence * 100) }}%)
+  &middot; <a href="/documents/{{ doc.id }}/file">Download PDF</a></p>
+{% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+{% if doc.review_reasons %}
+<div class="alert error">Needs review: {{ doc.review_reasons|join(', ')|replace('_', ' ') }}
+  {% if original %}&middot; looks like <a href="/documents/{{ original.id }}">#{{ original.id }} {{ original.filename }}</a> ({{ "%.1f"|format((doc.near_duplicate_score or 0) * 100) }}% similar){% endif %}</div>
+{% endif %}
+<div class="grid grid-2">
+  <div class="card">
+    <h2>Extracted Information</h2>
+    <dl class="kv">
+      <div><dt>Patient Name</dt><dd>{{ doc.patient_name or "—" }}</dd></div>
+      <div><dt>Patient ID</dt><dd>{{ doc.patient_id or "—" }}</dd></div>
+      <div><dt>Claim Number</dt><dd>{{ doc.claim_number or "—" }}</dd></div>
+      <div><dt>Service Date</dt><dd>{{ doc.service_date or "—" }}</dd></div>
+      <div><dt>Billed Amount</dt><dd>{% if doc.billed_amount is not none %}${{ "{:,.2f}".format(doc.billed_amount) }}{% else %}—{% endif %}</dd></div>
+      <div><dt>Insurer</dt><dd>{{ doc.insurer or "—" }}</dd></div>
+      <div><dt>Encrypted at rest</dt><dd>{{ "yes" if doc.encrypted else "no" }}</dd></div>
+      <div><dt>SHA-256</dt><dd class="mono">{{ doc.sha256 }}</dd></div>
+    </dl>
+    {% if user.role in ('admin', 'member') %}
+    <form method="post" action="/documents/{{ doc.id }}/reprocess" class="mt">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn dark" type="submit">Re-run extraction</button>
+    </form>
+    {% endif %}
+    {% if user.role == 'admin' %}
+    <form method="post" action="/documents/{{ doc.id }}/delete" class="mt">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn danger" type="submit">Delete document</button>
+    </form>
+    {% endif %}
+  </div>
+  {% if user.role in ('admin', 'member') %}
+  <div class="card">
+    <h2>Edit Fields</h2>
+    <form action="/documents/{{ doc.id }}/edit" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label for="patient_name">Patient Name</label><input type="text" id="patient_name" name="patient_name" value="{{ doc.patient_name }}">
+      <label for="patient_id">Patient ID</label><input type="text" id="patient_id" name="patient_id" value="{{ doc.patient_id }}">
+      <label for="claim_number">Claim Number</label><input type="text" id="claim_number" name="claim_number" value="{{ doc.claim_number }}">
+      <label for="service_date">Service Date (YYYY-MM-DD)</label><input type="text" id="service_date" name="service_date" value="{{ doc.service_date }}">
+      <label for="billed_amount">Billed Amount</label><input type="text" id="billed_amount" name="billed_amount" value="{% if doc.billed_amount is not none %}{{ doc.billed_amount }}{% endif %}">
+      <label for="insurer">Insurer</label><input type="text" id="insurer" name="insurer" value="{{ doc.insurer }}">
+      <label for="doc_type">Document Type</label>
+      <select id="doc_type" name="doc_type">
+        {% for t in doc_types %}<option value="{{ t }}" {% if doc.doc_type == t %}selected{% endif %}>{{ t }}</option>{% endfor %}
+      </select>
+      <label class="check"><input type="checkbox" name="mark_reviewed" value="1"> Mark as reviewed</label>
+      {% if doc.near_duplicate_of_id %}<label class="check"><input type="checkbox" name="not_duplicate" value="1"> Not a duplicate</label>{% endif %}
+      <p><button type="submit" class="btn">Save changes</button></p>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
