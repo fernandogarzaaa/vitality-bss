@@ -67,7 +67,7 @@ include = ["vitality_bss", "tests", "README.md", "CHANGELOG.md", "LICENSE", "SEC
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
-filterwarnings = ["ignore::DeprecationWarning", "ignore::PendingDeprecationWarning"]
+filterwarnings = ["ignore::DeprecationWarning", "ignore::PendingDeprecationWarning", "ignore:Using `httpx`"]
 
 [tool.ruff]
 line-length = 120
