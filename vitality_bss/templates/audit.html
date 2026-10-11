@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% set active = 'audit' %}
+{% block title %}Audit log - {{ app_name }}{% endblock %}
+{% block content %}
+<h1>Audit log</h1>
+<p class="sub">Latest 300 events. Full history: <span class="mono">GET /api/audit</span>.</p>
+<div class="card">
+  <table>
+    <thead><tr><th>Time (UTC)</th><th>Actor</th><th>Action</th><th>Resource</th><th>Result</th><th>IP</th></tr></thead>
+    <tbody>
+    {% for e in events %}
+      <tr><td class="mono">{{ e.ts.strftime('%Y-%m-%d %H:%M:%S') }}</td><td>{{ e.actor_email or "—" }}</td><td>{{ e.action }}</td>
+        <td>{{ e.resource_type }}{% if e.resource_id %}:{{ e.resource_id }}{% endif %}</td>
+        <td>{% if e.success %}<span class="badge ok">ok</span>{% else %}<span class="badge review">failed</span>{% endif %}</td><td class="mono">{{ e.ip }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

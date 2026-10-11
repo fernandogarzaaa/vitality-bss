@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% set active = 'binders' %}
+{% block title %}Binders - {{ app_name }}{% endblock %}
+{% block content %}
+<h1>Patient Binders</h1>
+<p class="sub">Auto-grouped by patient ID, ordered EOB &rarr; Clinical Note &rarr; Lab Report &rarr; Invoice &rarr; Insurance Form. Possible duplicates are left out until reviewed.</p>
+{% if binders %}
+  {% for b in binders %}
+  <div class="card">
+    <div class="inline between">
+      <div>
+        <h2 class="m0">{{ b.patient_name or "Unknown patient" }} <span class="muted">{{ b.patient_id }}</span></h2>
+        <p class="muted m0">{{ b.documents|length }} document(s) &middot; invoiced ${{ "{:,.2f}".format(b.total_billed) }}
+          &middot; {% if b.ready %}<span class="badge ok">ready</span>{% else %}<span class="badge review">needs review</span>{% endif %}</p>
+      </div>
+      <form action="/binders/generate" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="patient_id" value="{{ b.patient_id }}">
+        <button type="submit" class="btn">Generate Binder PDF</button>
+      </form>
+    </div>
+    <ol class="binder mt">
+      {% for doc in b.documents %}
+      <li><span class="badge">{{ doc.doc_type }}</span> <a href="/documents/{{ doc.id }}">{{ doc.filename }}</a>
+        {% if doc.service_date %}<span class="muted">{{ doc.service_date }}</span>{% endif %}
+        {% if doc.billed_amount is not none %}<span class="muted">${{ "{:,.2f}".format(doc.billed_amount) }}</span>{% endif %}
+        {% if doc.status != 'processed' %}<span class="badge review">review</span>{% endif %}</li>
+      {% endfor %}
+    </ol>
+  </div>
+  {% endfor %}
+{% else %}
+<div class="card"><p class="muted">No binders yet. <a href="/documents">Upload documents</a> to build patient binders automatically.</p></div>
+{% endif %}
+{% endblock %}

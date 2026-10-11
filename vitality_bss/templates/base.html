@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand"><span class="mark">&#9632;</span> {{ app_name }}<small>v{{ version }}</small></div>
+    <nav class="nav">
+      {% set active = active|default('') %}
+      <a href="/" class="{{ 'active' if active == 'dashboard' }}">Dashboard</a>
+      <a href="/documents" class="{{ 'active' if active == 'documents' }}">Documents</a>
+      <a href="/binders" class="{{ 'active' if active == 'binders' }}">Binders</a>
+      {% if user and user.role == 'admin' %}
+      <a href="/admin/users" class="{{ 'active' if active == 'users' }}">Users</a>
+      <a href="/admin/audit" class="{{ 'active' if active == 'audit' }}">Audit log</a>
+      {% endif %}
+      <a href="/api/docs">API docs</a>
+    </nav>
+    <div class="userbox">
+      {% if user %}
+      {{ user.email }} &middot; {{ user.role }}<br>
+      <a href="/account">Account</a>
+      <form method="post" action="/logout">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="btn ghost" type="submit">Sign out</button>
+      </form>
+      {% endif %}
+    </div>
+  </aside>
+  <main>
+    <div class="container">
+      {% if flash %}<div class="alert info">{{ flash }}</div>{% endif %}
+      {% block content %}{% endblock %}
+      <p class="notice">Contains protected health information. Access is logged.</p>
+    </div>
+  </main>
+</div>
+</body>
+</html>

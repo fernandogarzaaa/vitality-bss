@@ -1,0 +1,109 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vitality-bss"
+version = "1.0.0"
+description = "Healthcare document processing: classify, extract, dedupe, and auto-generate patient billing binders."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "Fernando Garza" }]
+keywords = ["healthcare", "billing", "pdf", "ocr", "llm", "fastapi", "document-processing"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Framework :: FastAPI",
+  "Intended Audience :: Healthcare Industry",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Office/Business :: Financial",
+]
+dependencies = [
+  "fastapi==0.142.2",
+  "uvicorn[standard]==0.37.0",
+  "sqlalchemy==2.1.3",
+  "alembic==1.20.0",
+  "pydantic==2.13.5",
+  "pydantic-settings==2.15.0",
+  "PyJWT==2.15.1",
+  "bcrypt==4.0.1",
+  "cryptography==50.0.2",
+  "jinja2==3.1.6",
+  "pypdf==6.19.0",
+  "reportlab==5.0.1",
+  "python-multipart==0.0.32",
+  "httpx==0.28.1",
+]
+
+[project.optional-dependencies]
+postgres = ["psycopg2-binary==2.9.13"]
+dev = [
+  "pytest==9.0.3",
+  "pytest-cov==7.1.0",
+  "ruff==0.14.4",
+  "mypy==2.4.0",
+  "testteeth==0.2.0",
+  "build==1.3.0",
+]
+
+[project.scripts]
+vitality-bss = "vitality_bss.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/fernandogarzaaa/vitality-bss"
+Issues = "https://github.com/fernandogarzaaa/vitality-bss/issues"
+Changelog = "https://github.com/fernandogarzaaa/vitality-bss/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["vitality_bss"]
+
+[tool.hatch.build.targets.sdist]
+include = ["vitality_bss", "tests", "README.md", "CHANGELOG.md", "LICENSE", "SECURITY.md", ".env.example"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning", "ignore::PendingDeprecationWarning", "ignore:Using `httpx`"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "BLE", "C4", "SIM", "RUF"]
+ignore = ["S101", "S104", "B008", "RUF012", "UP017"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S108", "S603", "S607", "BLE001", "E501"]
+"vitality_bss/pdftext.py" = ["S603", "S607"]
+"vitality_bss/migrations/**" = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+plugins = ["pydantic.mypy"]
+exclude = ["vitality_bss/migrations/"]
+
+[[tool.mypy.overrides]]
+module = ["reportlab.*"]
+ignore_missing_imports = true
+
+[tool.testteeth]
+paths = [
+  "vitality_bss/classify.py",
+  "vitality_bss/extract.py",
+  "vitality_bss/redact.py",
+  "vitality_bss/dedupe.py",
+  "vitality_bss/ai.py",
+  "vitality_bss/security.py",
+  "vitality_bss/storage.py",
+]
+
+[tool.coverage.run]
+source = ["vitality_bss"]
+omit = ["vitality_bss/migrations/*", "vitality_bss/__main__.py"]

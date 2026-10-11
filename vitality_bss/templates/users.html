@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% set active = 'users' %}
+{% block title %}Users - {{ app_name }}{% endblock %}
+{% block content %}
+<h1>Users</h1>
+<p class="sub">admin: everything &middot; member: upload, edit, binders &middot; viewer: read-only</p>
+{% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+<div class="card">
+  <table>
+    <thead><tr><th>Email</th><th>Name</th><th>Last login</th><th>Role / status</th></tr></thead>
+    <tbody>
+    {% for u in users %}
+      <tr><td>{{ u.email }}</td><td>{{ u.name }}</td><td class="muted">{{ u.last_login_at.strftime('%Y-%m-%d %H:%M') if u.last_login_at else "never" }}</td>
+        <td><form method="post" action="/admin/users/{{ u.id }}" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <select name="role">{% for r in roles %}<option value="{{ r }}" {% if u.role == r %}selected{% endif %}>{{ r }}</option>{% endfor %}</select>
+          <label class="check m0"><input type="checkbox" name="is_active" value="1" {% if u.is_active %}checked{% endif %}> active</label>
+          <button class="btn dark" type="submit">Save</button>
+        </form></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="card">
+  <h2>Add user</h2>
+  <form method="post" action="/admin/users">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="email">Email</label><input id="email" type="email" name="email" required>
+    <label for="name">Name</label><input id="name" type="text" name="name">
+    <label for="password">Initial password</label><input id="password" type="password" name="password" required autocomplete="new-password">
+    <label for="role">Role</label><select id="role" name="role">{% for r in roles %}<option value="{{ r }}" {% if r == 'member' %}selected{% endif %}>{{ r }}</option>{% endfor %}</select>
+    <p><button class="btn" type="submit">Create user</button></p>
+  </form>
+</div>
+{% endblock %}
