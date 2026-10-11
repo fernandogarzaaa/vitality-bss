@@ -82,6 +82,12 @@ def test_near_duplicate_disabled(session, set_env):
     assert second.near_duplicate_of_id is None
 
 
+def test_same_template_different_patient_not_near_duplicate(session):
+    pipeline.process_upload(session, "a.pdf", invoice_pdf("PT-1111"))
+    other = pipeline.process_upload(session, "b.pdf", invoice_pdf("PT-2222")).document
+    assert other.near_duplicate_of_id is None
+
+
 def test_different_documents_not_near_duplicates(session):
     pipeline.process_upload(session, "eob.pdf", eob_pdf())
     inv = pipeline.process_upload(session, "inv.pdf", invoice_pdf()).document

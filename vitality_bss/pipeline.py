@@ -144,7 +144,15 @@ def process_upload(
     fp = dedupe.fingerprint(info.text)
     near = None
     if fp is not None:
-        rows = db.execute(select(Document.id, Document.embedding).where(Document.embedding.is_not(None))).all()
+        # Only compare within the same patient and document type: billing documents share
+        # templates, so two patients' invoices can be textually near-identical.
+        rows = db.execute(
+            select(Document.id, Document.embedding).where(
+                Document.embedding.is_not(None),
+                Document.patient_id == fields["patient_id"],
+                Document.doc_type == info.doc_type,
+            )
+        ).all()
         near = dedupe.best_match(fp, ((r[0], r[1]) for r in rows), s.NEAR_DUPLICATE_THRESHOLD)
     reasons = list(info.review_reasons)
     if near is not None:
