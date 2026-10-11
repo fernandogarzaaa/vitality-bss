@@ -1,0 +1,53 @@
+name: release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: System packages (OCR)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends tesseract-ocr poppler-utils
+      - name: Install
+        run: |
+          pip install -r requirements.lock
+          pip install -e ".[dev]"
+      - name: Verify
+        run: |
+          ruff check .
+          mypy vitality_bss
+          pytest -q
+      - name: Check tag matches package version
+        run: |
+          PKG=$(python -c "import vitality_bss; print(vitality_bss.__version__)")
+          test "v${PKG}" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != v${PKG}"; exit 1; }
+      - name: Build sdist + wheel
+        run: python -m build
+      - name: Checksums
+        run: cd dist && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES=$(python - <<'EOF'
+          import re, os
+          tag = os.environ["GITHUB_REF_NAME"].lstrip("v")
+          text = open("CHANGELOG.md").read()
+          m = re.search(rf"## \[{re.escape(tag)}\][^\n]*\n(.*?)(?=\n## \[|\Z)", text, re.S)
+          print(m.group(1).strip() if m else f"Release {tag}")
+          EOF
+          )
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* --title "Vitality BSS $GITHUB_REF_NAME" --notes "$NOTES"
+          fi

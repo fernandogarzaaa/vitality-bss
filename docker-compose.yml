@@ -1,33 +1,38 @@
+# Production-style stack: app + PostgreSQL. Secrets come from .env (see .env.example).
+#   cp .env.example .env   # then set SECRET_KEY, ADMIN_*, ENCRYPTION_KEYS, POSTGRES_PASSWORD
+#   docker compose up -d --build
 services:
   db:
-    image: pgvector/pgvector:0.8.0-pg16
+    image: postgres:16-alpine
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: clusterx
-      POSTGRES_PASSWORD: clusterx
-      POSTGRES_DB: clusterx
+      POSTGRES_USER: vbss
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: vbss
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U clusterx"]
+      test: ["CMD-SHELL", "pg_isready -U vbss"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  api:
+  app:
     build: .
-    ports:
-      - "${PORT:-8001}:${PORT:-8001}"
-    env_file:
-      - .env
+    restart: unless-stopped
+    env_file: .env
     environment:
-      DATABASE_URL: postgresql+psycopg2://clusterx:clusterx@db:5432/clusterx
+      DATABASE_URL: postgresql+psycopg2://vbss:${POSTGRES_PASSWORD}@db:5432/vbss
+      DATA_DIR: /data
       PORT: ${PORT:-8001}
-      SEED_ON_STARTUP: "1"
+    ports:
+      - "127.0.0.1:${PORT:-8001}:${PORT:-8001}"   # put a TLS reverse proxy in front
     volumes:
-      - ./data:/srv/app/data
+      - appdata:/data
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   pgdata:
+  appdata:
