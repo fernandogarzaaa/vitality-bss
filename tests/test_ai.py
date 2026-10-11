@@ -333,3 +333,27 @@ def test_enrich_threshold_boundary_not_overridden():
 
 def test_parse_json_embedded_multiline():
     assert ai.parse_json_object('Result:\n{"a":\n 1}\nDone') == {"a": 1}
+
+
+def test_enrich_default_truncation_and_rounding():
+    llm = FakeLLM({})
+    out = ai.enrich(llm, "x.pdf", "y" * 13000, Classification("Invoice", 0.123456, {}), _empty_fields())
+    sent = llm.calls[0][1].split("\n---\n", 1)[1]
+    assert len(sent) == 12000
+    assert out.confidence == 0.123
+
+
+def test_network_error_is_chained_cause():
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("boom")
+
+    with pytest.raises(ai.LLMError) as exc:
+        _client(handler).complete_json("s", "u")
+    assert isinstance(exc.value.__cause__, httpx.ConnectError)
+
+
+def test_close_closes_http_client():
+    c = _client(lambda r: _reply("{}"))
+    assert c._client.is_closed is False
+    c.close()
+    assert c._client.is_closed is True
