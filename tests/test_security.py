@@ -63,7 +63,7 @@ def test_token_custom_expiry_and_expired():
 def test_token_rejects_tampering_and_wrong_key():
     tok = security.create_access_token(1, 0)
     assert security.decode_access_token(tok + "x") is None
-    forged = jwt.encode({"sub": "1", "iat": 0, "exp": 9999999999, "iss": "vitality-bss"}, "other", algorithm="HS256")
+    forged = jwt.encode({"sub": "1", "iat": 0, "exp": 9999999999, "iss": "vitality-bss"}, "o" * 40, algorithm="HS256")
     assert security.decode_access_token(forged) is None
     wrong_iss = jwt.encode({"sub": "1", "iat": 0, "exp": 9999999999, "iss": "x"},
                            get_settings().SECRET_KEY, algorithm="HS256")

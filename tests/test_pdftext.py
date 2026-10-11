@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import subprocess
+from pathlib import Path
 
 import pytest
 from pypdf import PdfWriter
@@ -18,11 +19,12 @@ from vitality_bss.pdftext import InvalidDocument, extract_text, open_pdf
 needs_ocr = pytest.mark.skipif(not pdftext.ocr_available(), reason="tesseract/pdftoppm not installed")
 
 
-def scanned_pdf(lines: list[str]) -> bytes:
+def scanned_pdf(lines: list[str], tmp: Path) -> bytes:
     """A PDF whose only content is a raster image of text (like a scan)."""
-    text_pdf = make_pdf("CLINICAL NOTE", lines, banner=False)
-    png = subprocess.run(["pdftoppm", "-r", "200", "-png", "-singlefile", "-", "-"], input=text_pdf,
-                         capture_output=True, check=True).stdout
+    (tmp / "src.pdf").write_bytes(make_pdf("CLINICAL NOTE", lines, banner=False))
+    subprocess.run(["pdftoppm", "-r", "200", "-png", "-singlefile", str(tmp / "src.pdf"), str(tmp / "img")],
+                   capture_output=True, check=True)
+    png = (tmp / "img.png").read_bytes()
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=letter)
     c.drawImage(ImageReader(io.BytesIO(png)), 0, 0, width=letter[0], height=letter[1])
@@ -137,8 +139,8 @@ def test_ocr_disabled_flag(monkeypatch):
 
 
 @needs_ocr
-def test_real_ocr_on_scanned_pdf():
-    pdf = scanned_pdf(["Patient Name: Olivia Bennett", "Patient ID: PT-4242", "Chief Complaint: Cough"])
+def test_real_ocr_on_scanned_pdf(tmp_path):
+    pdf = scanned_pdf(["Patient Name: Olivia Bennett", "Patient ID: PT-4242", "Chief Complaint: Cough"], tmp_path)
     plain = extract_text(pdf, ocr_enabled=False)
     assert plain.text.strip() == ""
     out = extract_text(pdf, ocr_dpi=200)
