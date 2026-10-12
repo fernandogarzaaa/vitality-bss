@@ -13,9 +13,9 @@
       <tr><td>{{ u.email }}</td><td>{{ u.name }}</td><td class="muted">{{ u.last_login_at.strftime('%Y-%m-%d %H:%M') if u.last_login_at else "never" }}</td>
         <td><form method="post" action="/admin/users/{{ u.id }}" class="inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <select name="role">{% for r in roles %}<option value="{{ r }}" {% if u.role == r %}selected{% endif %}>{{ r }}</option>{% endfor %}</select>
-          <label class="check m0"><input type="checkbox" name="is_active" value="1" {% if u.is_active %}checked{% endif %}> active</label>
-          <button class="btn dark" type="submit">Save</button>
+          <select name="role" aria-label="Role for {{ u.email }}">{% for r in roles %}<option value="{{ r }}" {% if u.role == r %}selected{% endif %}>{{ r }}</option>{% endfor %}</select>
+          <label class="check m0"><input type="checkbox" name="is_active" value="1" {% if u.is_active %}checked{% endif %} aria-label="{{ u.email }} active"> active</label>
+          <button class="btn dark" type="submit" aria-label="Save {{ u.email }}">Save</button>
         </form></td></tr>
     {% endfor %}
     </tbody>

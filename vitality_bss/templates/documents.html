@@ -9,7 +9,7 @@
   <h2>Upload PDFs</h2>
   <form action="/documents/upload" method="post" enctype="multipart/form-data" class="inline">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <input type="file" name="files" accept="application/pdf" multiple required>
+    <input type="file" name="files" accept="application/pdf" multiple required aria-label="PDF files to process">
     <button type="submit" class="btn dark">Process</button>
   </form>
   <p class="muted">Up to {{ max_mb }} MB per file. Identical files are detected by content hash and never double-counted; scanned pages are OCR'd locally.</p>
